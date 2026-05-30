@@ -26,6 +26,8 @@ export default defineConfig({
     command: 'npm run start --workspace=services/order-service',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 15_000,
+    timeout: 120_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });
