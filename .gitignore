@@ -1,0 +1,10 @@
+node_modules/
+dist/
+reports/
+quality-dashboard/dist/
+coverage/
+.env
+*.log
+.DS_Store
+playwright-report/
+test-results/

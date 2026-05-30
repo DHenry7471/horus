@@ -1,0 +1,117 @@
+name: Horus — Nightly Flakiness Detection
+
+on:
+  schedule:
+    # Runs at 02:00 UTC every night
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      run_count:
+        description: 'Number of times to run the suite'
+        required: false
+        default: '3'
+
+jobs:
+  flakiness-scan:
+    name: Flakiness Scan (Run ${{ matrix.run_number }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        run_number: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit -- --reporter=json --outputFile=reports/unit-run-${{ matrix.run_number }}.json
+        continue-on-error: true
+
+      - name: Run integration tests
+        run: npm run test:integration -- --reporter=json --outputFile=reports/integration-run-${{ matrix.run_number }}.json
+        continue-on-error: true
+
+      - name: Upload run results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flakiness-run-${{ matrix.run_number }}
+          path: reports/
+          retention-days: 14
+
+  analyze-flakiness:
+    name: Analyze & Report Flaky Tests
+    runs-on: ubuntu-latest
+    needs: [flakiness-scan]
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all run results
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/
+
+      - name: Analyze flakiness
+        run: node quality-dashboard/src/flakiness-analyzer.js
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload flakiness report
+        uses: actions/upload-artifact@v4
+        with:
+          name: flakiness-report
+          path: reports/flakiness-report.json
+          retention-days: 30
+
+      - name: Open issue for flaky tests
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'reports/flakiness-report.json';
+
+            if (!fs.existsSync(reportPath)) {
+              console.log('No flakiness report found — all runs likely passed.');
+              return;
+            }
+
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+
+            if (!report.flakyTests || report.flakyTests.length === 0) {
+              console.log('No flaky tests detected. ✅');
+              return;
+            }
+
+            const flakyList = report.flakyTests
+              .map(t => `- \`${t.name}\` (passed ${t.passCount}/3 runs)`)
+              .join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🟡 Flaky Tests Detected — ${new Date().toISOString().split('T')[0]}`,
+              body: `## Flakiness Report\n\nThe nightly scan detected **${report.flakyTests.length}** flaky test(s):\n\n${flakyList}\n\n**Run:** ${context.runId}\n**Date:** ${new Date().toISOString()}`,
+              labels: ['flaky-test', 'quality'],
+            });
