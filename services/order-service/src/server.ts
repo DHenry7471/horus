@@ -12,7 +12,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { OrderService } from './OrderService.js';
 import { MockRepository } from '../../../shared/test-utils/src/index.js';
 import { MockEventBus } from '../../../shared/test-utils/src/index.js';
-import { Order } from './types.js';
+import { Order, ValidationError, NotFoundError } from './types.js';
 
 // In a real service these would be real adapters (PostgresRepository, RedisEventBus)
 // For this demo we use in-memory implementations — swap by changing these two lines
@@ -74,12 +74,8 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   const message = err.message ?? 'Internal server error';
 
   const status =
-    message.includes('not found') ? 404 :
-    message.includes('required') ||
-    message.includes('Invalid') ||
-    message.includes('Unknown') ||
-    message.includes('Cannot') ||
-    message.includes('must contain') ? 400 : 500;
+    err instanceof ValidationError ? 400 :
+    err instanceof NotFoundError   ? 404 : 500;
 
   res.status(status).json({ error: message });
 });

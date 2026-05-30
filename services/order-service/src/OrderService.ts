@@ -9,7 +9,7 @@
  */
 
 import { IRepository, IEventBus } from '@horus/contracts';
-import { Order, OrderStatus, CreateOrderRequest, OrderItem } from './types.js';
+import { Order, OrderStatus, CreateOrderRequest, OrderItem, ValidationError, NotFoundError } from './types.js';
 
 export const ORDER_EVENTS = {
   CREATED: 'order.created',
@@ -62,7 +62,7 @@ export class OrderService {
     const order = await this.findOrThrow(orderId);
 
     if (order.status !== OrderStatus.PENDING) {
-      throw new Error(
+      throw new ValidationError(
         `Cannot confirm order in status "${order.status}". Expected PENDING.`
       );
     }
@@ -85,7 +85,7 @@ export class OrderService {
 
     const cancellableStatuses = [OrderStatus.PENDING, OrderStatus.CONFIRMED];
     if (!cancellableStatuses.includes(order.status)) {
-      throw new Error(
+      throw new ValidationError(
         `Cannot cancel order in status "${order.status}".`
       );
     }
@@ -116,17 +116,17 @@ export class OrderService {
 
   private validateCreateRequest(request: CreateOrderRequest): void {
     if (!request.customerId?.trim()) {
-      throw new Error('customerId is required');
+      throw new ValidationError('customerId is required');
     }
     if (!request.items?.length) {
-      throw new Error('Order must contain at least one item');
+      throw new ValidationError('Order must contain at least one item');
     }
     for (const item of request.items) {
       if (item.quantity < 1) {
-        throw new Error(`Invalid quantity ${item.quantity} for product ${item.productId}`);
+        throw new ValidationError(`Invalid quantity ${item.quantity} for product ${item.productId}`);
       }
       if (!PRODUCT_CATALOG[item.productId]) {
-        throw new Error(`Unknown productId: ${item.productId}`);
+        throw new ValidationError(`Unknown productId: ${item.productId}`);
       }
     }
   }
@@ -151,7 +151,7 @@ export class OrderService {
   private async findOrThrow(orderId: string): Promise<Order> {
     const order = await this.orderRepository.findById(orderId);
     if (!order) {
-      throw new Error(`Order not found: ${orderId}`);
+      throw new NotFoundError(`Order not found: ${orderId}`);
     }
     return order;
   }
