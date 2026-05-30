@@ -114,7 +114,7 @@ Push / PR
 
 The live dashboard is published to GitHub Pages on every merge to `main`.
 
-**[View Dashboard →](https://YOUR_USERNAME.github.io/horus/)**
+**[View Dashboard →](https://dhenry7471.github.io/horus/)**
 
 Tracks:
 - Overall pass rate trend (last 30 runs)
