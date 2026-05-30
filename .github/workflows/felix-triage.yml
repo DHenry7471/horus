@@ -1,0 +1,183 @@
+name: Felix — Test Failure Triage
+
+on:
+  workflow_run:
+    workflows: ['Horus CI — Quality Gate']
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  felix-triage:
+    name: Felix Failure Triage
+    runs-on: ubuntu-latest
+    # Only run when the CI workflow failed
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download unit test results
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: reports/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download integration test results
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: reports/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download E2E test results
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: reports/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Clone claude_agents and start MCP server
+        run: |
+          git clone https://github.com/DHenry7471/claude_agents.git /tmp/claude_agents
+          cd /tmp/claude_agents
+          npm ci
+          npm start &
+          echo "MCP_PID=$!" >> "$GITHUB_ENV"
+          # Wait for server to be ready (up to 30s)
+          for i in $(seq 1 15); do
+            curl -sf "http://localhost:3000/health" && break || sleep 2
+          done
+
+      - name: Build report payload
+        id: payload
+        run: |
+          UNIT=$(cat reports/unit-results.json 2>/dev/null || echo 'null')
+          INTG=$(cat reports/integration-results.json 2>/dev/null || echo 'null')
+          E2E=$(cat reports/e2e-results.json 2>/dev/null || echo 'null')
+          PAYLOAD=$(jq -n \
+            --argjson unit "$UNIT" \
+            --argjson integration "$INTG" \
+            --argjson e2e "$E2E" \
+            '{unit: $unit, integration: $integration, e2e: $e2e}')
+          echo "payload<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$PAYLOAD" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Run Felix agent
+        id: felix
+        run: |
+          OUTPUT=$(tsx agents/run-agent.ts felix "${{ steps.payload.outputs.payload }}")
+          echo "output<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        env:
+          CLAUDE_AGENTS_MCP_URL: 'http://localhost:3000'
+          CLAUDE_AGENTS_TIMEOUT: '180000'
+
+      - name: Stop MCP agent server
+        if: always()
+        run: kill "$MCP_PID" 2>/dev/null || true
+
+      - name: Detect BLOCK verdict
+        id: verdict
+        run: |
+          if echo "${{ steps.felix.outputs.output }}" | grep -qi '\bBLOCK\b'; then
+            echo "block=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "block=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post Felix triage as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `${{ steps.felix.outputs.output }}`;
+            const isBlock = '${{ steps.verdict.outputs.block }}' === 'true';
+            const verdict = isBlock ? '🚫 **BLOCK**' : '✅ **PASS**';
+
+            const body = [
+              `## 🔬 Felix — Test Failure Triage`,
+              '',
+              `**Verdict:** ${verdict}`,
+              '',
+              output,
+              '',
+              '---',
+              `*Triggered by failed run [${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`,
+            ].join('\n');
+
+            // Find the PR associated with this workflow run
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${{ github.event.workflow_run.head_branch }}`,
+            });
+
+            if (prs.length === 0) {
+              console.log('No open PR found for this branch — skipping comment.');
+              return;
+            }
+
+            const pr = prs[0];
+
+            // Upsert comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith('## 🔬 Felix')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
+
+            // Add merge-block label if felix says BLOCK
+            if ('${{ steps.verdict.outputs.block }}' === 'true') {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['merge-block'],
+                });
+              } catch (e) {
+                console.warn('Could not add merge-block label (may not exist yet):', e.message);
+              }
+            }

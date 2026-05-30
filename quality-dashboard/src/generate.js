@@ -76,7 +76,7 @@ function parseCoverage(raw) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
-function generate() {
+async function generate() {
   console.info('🔭 Horus Dashboard Generator starting...');
 
   fs.mkdirSync(DIST_DIR, { recursive: true });
@@ -124,10 +124,38 @@ function generate() {
     JSON.stringify(snapshot, null, 2)
   );
 
-  // Copy the dashboard HTML
+  // ── Iris enrichment ──────────────────────────────────────────────────────
+  // Call the Iris agent with the history JSON. It returns an HTML snippet
+  // (Output A) that we inject into the dashboard just before </body>.
+  // If Iris is unavailable or disabled, we fall back to the plain HTML.
+  let irisSnippet = '';
+  const irisEnabled =
+    process.env.CLAUDE_AGENTS_MCP_URL !== undefined ||
+    process.env.IRIS_ENABLED === 'true';
+
+  if (irisEnabled) {
+    try {
+      // Dynamic import so the file is still usable without tsx in prod
+      const { runAgent } = await import('../../agents/run-agent.js');
+      const { output } = await runAgent('iris', JSON.stringify(history));
+      // Iris returns an HTML snippet — extract it if wrapped in a code block
+      const snippetMatch = output.match(/```html\s*([\s\S]*?)```/) ??
+                           output.match(/```\s*([\s\S]*?)```/);
+      irisSnippet = snippetMatch ? snippetMatch[1].trim() : output.trim();
+      console.info('   Iris enrichment applied.');
+    } catch (err) {
+      console.warn(`   Iris enrichment skipped: ${err.message}`);
+    }
+  }
+
+  // Copy and (optionally) enrich the dashboard HTML
   const dashboardSrc = path.resolve(__dirname, 'dashboard.html');
   if (fs.existsSync(dashboardSrc)) {
-    fs.copyFileSync(dashboardSrc, path.join(DIST_DIR, 'index.html'));
+    let html = fs.readFileSync(dashboardSrc, 'utf8');
+    if (irisSnippet) {
+      html = html.replace('</body>', `${irisSnippet}\n</body>`);
+    }
+    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), html);
   }
 
   console.info(`✅ Dashboard generated → ${DIST_DIR}`);
