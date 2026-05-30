@@ -78,7 +78,8 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     message.includes('required') ||
     message.includes('Invalid') ||
     message.includes('Unknown') ||
-    message.includes('Cannot') ? 400 : 500;
+    message.includes('Cannot') ||
+    message.includes('must contain') ? 400 : 500;
 
   res.status(status).json({ error: message });
 });
