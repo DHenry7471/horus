@@ -1,13 +1,14 @@
 /**
  * OrderService
  *
- * Pure business logic layer. Depends on IRepository and IEventBus interfaces,
- * never on concrete implementations. This is what makes the integration tests
- * possible without spinning up real infrastructure.
+ * Pure business logic layer. Depends on IRepository and IEventBus interfaces
+ * from @horus/contracts — never on concrete implementations, and crucially
+ * never on @horus/test-utils (test infrastructure).
+ *
+ * This separation is what makes integration tests possible without real infrastructure.
  */
 
-import { IRepository } from '../../../shared/test-utils/src/index.js';
-import { IEventBus } from '../../../shared/test-utils/src/index.js';
+import { IRepository, IEventBus } from '@horus/contracts';
 import { Order, OrderStatus, CreateOrderRequest, OrderItem } from './types.js';
 
 export const ORDER_EVENTS = {

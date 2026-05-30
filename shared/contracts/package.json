@@ -1,0 +1,7 @@
+{
+  "name": "@horus/contracts",
+  "version": "1.0.0",
+  "description": "Shared interface contracts for Horus services",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

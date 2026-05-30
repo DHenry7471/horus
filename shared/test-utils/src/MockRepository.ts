@@ -1,19 +1,13 @@
 /**
  * MockRepository<T>
  *
- * Generic in-memory repository. Replaces any real DB adapter (Postgres, Mongo, etc.)
- * at the integration test layer. Production repositories implement IRepository<T>;
- * tests inject MockRepository<T> so no real DB connection is needed.
+ * Generic in-memory repository implementing IRepository<T> from @horus/contracts.
+ * Replaces any real DB adapter at the integration test layer — no DB connection needed.
  */
 
-export interface IRepository<T extends { id: string }> {
-  findById(id: string): Promise<T | null>;
-  findAll(): Promise<T[]>;
-  findWhere(predicate: (item: T) => boolean): Promise<T[]>;
-  save(entity: T): Promise<T>;
-  update(id: string, patch: Partial<T>): Promise<T | null>;
-  delete(id: string): Promise<boolean>;
-}
+import { IRepository } from '@horus/contracts';
+
+export { IRepository };
 
 export class MockRepository<T extends { id: string }> implements IRepository<T> {
   private store = new Map<string, T>();

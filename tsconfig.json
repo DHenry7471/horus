@@ -15,6 +15,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
+      "@horus/contracts": ["./shared/contracts/src/index.ts"],
       "@horus/test-utils": ["./shared/test-utils/src/index.ts"]
     }
   },

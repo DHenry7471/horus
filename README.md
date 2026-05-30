@@ -5,7 +5,7 @@
 Horus is a Staff SDET reference implementation demonstrating production-grade quality engineering across a TypeScript/Node.js microservice system. It is both a working system under test **and** the quality infrastructure around it.
 
 [![CI](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml)
-[![Quality Dashboard](https://img.shields.io/badge/dashboard-live-orange)](https://YOUR_USERNAME.github.io/horus/dashboard/)
+[![Quality Dashboard](https://img.shields.io/badge/dashboard-live-orange)](https://YOUR_USERNAME.github.io/horus/)
 
 ---
 
@@ -114,7 +114,7 @@ Push / PR
 
 The live dashboard is published to GitHub Pages on every merge to `main`.
 
-**[View Dashboard →](https://YOUR_USERNAME.github.io/horus/dashboard/)**
+**[View Dashboard →](https://YOUR_USERNAME.github.io/horus/)**
 
 Tracks:
 - Overall pass rate trend (last 30 runs)

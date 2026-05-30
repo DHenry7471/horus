@@ -3,18 +3,18 @@
   "version": "1.0.0",
   "description": "Horus — Test Observability Platform. A Staff SDET reference implementation.",
   "private": true,
+  "type": "module",
   "workspaces": [
     "services/*",
-    "shared/*",
-    "quality-dashboard"
+    "shared/*"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test:unit": "vitest run tests/unit --reporter=json --outputFile=reports/unit-results.json",
     "test:integration": "vitest run tests/integration --reporter=json --outputFile=reports/integration-results.json",
-    "test:e2e": "playwright test tests/e2e --reporter=json,html",
+    "test:e2e": "playwright test tests/e2e",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --reporter=json --outputFile=reports/unit-results.json",
     "dashboard:generate": "node quality-dashboard/src/generate.js",
     "dashboard:serve": "npx serve quality-dashboard/dist",
     "lint": "eslint . --ext .ts",
@@ -22,11 +22,14 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
+    "@types/express": "^4.17.21",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitest/coverage-v8": "^1.6.0",
     "eslint": "^8.57.0",
+    "express": "^4.19.0",
+    "tsx": "^4.11.0",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
   },

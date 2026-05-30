@@ -1,0 +1,9 @@
+{
+  "name": "@horus/notification-service",
+  "version": "1.0.0",
+  "description": "Horus Notification Service",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  }
+}

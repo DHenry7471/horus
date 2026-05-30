@@ -1,25 +1,17 @@
 /**
  * MockEventBus
  *
- * An in-memory replacement for any real message broker (Redis pub/sub, SQS, etc.).
- * Injected at the integration test layer so no external services are required.
+ * In-memory replacement for any real message broker (Redis pub/sub, SQS, etc.).
+ * Implements IEventBus from @horus/contracts — safe for injection at the
+ * integration test layer with zero external dependencies.
  *
- * Design: Follows the Adapter pattern — production code depends on the IEventBus
- * interface; tests inject MockEventBus instead of the real transport.
+ * Design: Adapter pattern — production code depends on IEventBus (contracts);
+ * tests inject MockEventBus (this file) instead of the real transport.
  */
 
-export interface EventPayload {
-  topic: string;
-  data: unknown;
-  timestamp: number;
-  correlationId: string;
-}
+import { IEventBus, EventPayload } from '@horus/contracts';
 
-export interface IEventBus {
-  publish(topic: string, data: unknown, correlationId?: string): Promise<void>;
-  subscribe(topic: string, handler: (payload: EventPayload) => void): void;
-  unsubscribeAll(): void;
-}
+export { IEventBus, EventPayload };
 
 export class MockEventBus implements IEventBus {
   private handlers = new Map<string, Array<(payload: EventPayload) => void>>();
@@ -52,13 +44,11 @@ export class MockEventBus implements IEventBus {
 
   // ── Test assertion helpers ────────────────────────────────────────────────
 
-  /** Returns all events published to a given topic */
   getPublishedEvents(topic?: string): EventPayload[] {
     if (!topic) return [...this.publishedEvents];
     return this.publishedEvents.filter((e) => e.topic === topic);
   }
 
-  /** Assert exactly N events were published to a topic */
   assertPublishedCount(topic: string, expectedCount: number): void {
     const actual = this.getPublishedEvents(topic).length;
     if (actual !== expectedCount) {
@@ -68,7 +58,6 @@ export class MockEventBus implements IEventBus {
     }
   }
 
-  /** Assert at least one event was published matching a predicate */
   assertPublished(topic: string, predicate: (data: unknown) => boolean): void {
     const match = this.getPublishedEvents(topic).find((e) => predicate(e.data));
     if (!match) {

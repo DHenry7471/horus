@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
+      reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './reports/coverage',
       thresholds: {
         lines: 80,
@@ -16,13 +16,10 @@ export default defineConfig({
         statements: 80,
       },
     },
-    reporters: ['default', 'json'],
-    outputFile: {
-      json: './reports/vitest-results.json',
-    },
   },
   resolve: {
     alias: {
+      '@horus/contracts': resolve(__dirname, './shared/contracts/src/index.ts'),
       '@horus/test-utils': resolve(__dirname, './shared/test-utils/src/index.ts'),
     },
   },
