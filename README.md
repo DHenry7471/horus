@@ -20,13 +20,17 @@ horus/
 │   ├── unit/                   ← Pure business logic tests (Vitest)
 │   ├── integration/            ← Cross-service tests with injected mocks (Vitest)
 │   └── e2e/                    ← Critical path smoke tests (Playwright)
+├── agents/
+│   └── run-agent.ts            ← MCP client for claude_agents integration
 ├── quality-dashboard/          ← Dashboard generator + HTML observatory
 ├── shared/
 │   └── test-utils/             ← Reusable mock injection library (@horus/test-utils)
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml              ← Main quality gate pipeline
-│       └── nightly-flakiness.yml ← Automated flakiness detection
+│       ├── ci.yml                  ← Main quality gate pipeline
+│       ├── nightly-flakiness.yml   ← Automated flakiness detection
+│       ├── percy-pr-review.yml     ← AI test-change review on PRs
+│       └── felix-triage.yml        ← AI failure triage on CI failure
 └── docs/
     ├── TEST_STRATEGY.md        ← Org-wide testing standards
     └── decisions/              ← Architecture Decision Records (ADRs)
@@ -103,7 +107,13 @@ Push / PR
   ├── [Parallel] Unit Tests        → blocks merge if fails
   │        └── Integration Tests  → blocks merge if fails
   │                 └── E2E Tests → blocks deploy if fails
-  └── (main only) Dashboard       → publishes to GitHub Pages
+  └── (main only) Dashboard       → publishes to GitHub Pages (Iris-enriched)
+
+PR touches tests/**
+  └── Percy review → posts AI test-change analysis as PR comment
+
+CI fails on PR
+  └── Felix triage → posts root-cause verdict, adds merge-block label if BLOCK
 ```
 
 **Nightly:** The flakiness scan runs the full suite 3× and opens a GitHub issue for any non-deterministic tests.
@@ -122,6 +132,7 @@ Tracks:
 - Code coverage vs thresholds
 - Test pyramid distribution health
 - Flakiness report from nightly scans
+- **Iris AI insights** — trend analysis and recommendations injected at build time
 
 ---
 
@@ -147,14 +158,41 @@ The shared mock injection library is the infrastructure investment that makes cl
 
 ---
 
+## AI Agents
+
+Horus integrates with [claude_agents](https://github.com/DHenry7471/claude_agents) via a thin MCP client (`agents/run-agent.ts`). Agents run against the MCP server started from that repo — no agent logic lives in Horus itself.
+
+| Agent   | Role                                      | Trigger                              |
+|---------|-------------------------------------------|--------------------------------------|
+| Percy   | Reviews test file changes on PRs          | PR touches `tests/**` or `*.test.ts` |
+| Felix   | Triages CI failures, issues BLOCK verdict | CI workflow fails                    |
+| Iris    | Enriches quality dashboard with insights  | `npm run dashboard:generate`         |
+| Greta   | Analyzes flakiness reports                | `npm run agents:greta`               |
+| Saxon   | Analyzes coverage summary                 | `npm run agents:saxon`               |
+
+**Environment variable:** Set `CLAUDE_AGENTS_MCP_URL` to point at a remote MCP server; defaults to `http://localhost:3000`.
+
+To run any agent locally, start the MCP server from the `claude_agents` repo then:
+
+```bash
+npm run agents:felix    # triage latest test failures
+npm run agents:percy    # review recent test-file diff
+npm run agents:iris     # enrich the dashboard
+npm run agents:greta    # analyze flakiness report
+npm run agents:saxon    # analyze coverage
+```
+
+---
+
 ## Tech Stack
 
-| Layer       | Tool                     |
-|-------------|--------------------------|
-| Language    | TypeScript 5             |
-| Unit/Intg   | Vitest                   |
-| E2E         | Playwright               |
-| Coverage    | V8 (via Vitest)          |
-| CI/CD       | GitHub Actions           |
-| Dashboard   | Vanilla HTML/JS (static) |
-| Monorepo    | npm workspaces           |
+| Layer       | Tool                            |
+|-------------|---------------------------------|
+| Language    | TypeScript 5                    |
+| Unit/Intg   | Vitest                          |
+| E2E         | Playwright                      |
+| Coverage    | V8 (via Vitest)                 |
+| CI/CD       | GitHub Actions                  |
+| Dashboard   | Vanilla HTML/JS (static)        |
+| AI Agents   | claude_agents (MCP)             |
+| Monorepo    | npm workspaces                  |
