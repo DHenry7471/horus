@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run start --workspace=services/order-service',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3000/health',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'pipe',
