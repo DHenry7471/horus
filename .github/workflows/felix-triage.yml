@@ -77,7 +77,7 @@ jobs:
       - name: Run Felix agent
         id: felix
         run: |
-          OUTPUT=$(tsx agents/run-agent.ts felix "${{ steps.payload.outputs.payload }}")
+          OUTPUT=$(npx tsx agents/run-agent.ts felix "${{ steps.payload.outputs.payload }}")
           echo "output<<EOF" >> "$GITHUB_OUTPUT"
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
