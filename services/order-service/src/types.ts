@@ -25,5 +25,5 @@ export interface Order {
 
 export interface CreateOrderRequest {
   customerId: string;
-  items: Omit<OrderItem, 'name'>[];
+  items: Pick<OrderItem, 'productId' | 'quantity'>[];
 }
