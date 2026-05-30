@@ -95,7 +95,7 @@ describe('Order → Notification Integration', () => {
       mockEventBus.assertPublishedCount(ORDER_EVENTS.CONFIRMED, 1);
       const sent = mockSender.getSent();
       expect(sent).toHaveLength(1);
-      expect(sent[0].subject).toContain('processing');
+      expect(sent[0].subject).toContain('processed');
     });
   });
 
