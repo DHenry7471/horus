@@ -10,6 +10,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './reports/coverage',
+      exclude: [
+        'shared/test-utils/**',
+        'tests/**',
+        'agents/**',
+        '**/node_modules/**',
+        '**/*.config.*',
+      ],
       thresholds: {
         lines: 80,
         functions: 80,
