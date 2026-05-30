@@ -14,7 +14,7 @@ import { IEventBus, EventPayload } from '@horus/contracts';
 export { IEventBus, EventPayload };
 
 export class MockEventBus implements IEventBus {
-  private handlers = new Map<string, Array<(payload: EventPayload) => void>>();
+  private handlers = new Map<string, Array<(payload: EventPayload) => void | Promise<void>>>();
   private publishedEvents: EventPayload[] = [];
 
   async publish(topic: string, data: unknown, correlationId = crypto.randomUUID()): Promise<void> {
@@ -29,11 +29,11 @@ export class MockEventBus implements IEventBus {
 
     const topicHandlers = this.handlers.get(topic) ?? [];
     for (const handler of topicHandlers) {
-      handler(payload);
+      await handler(payload);
     }
   }
 
-  subscribe(topic: string, handler: (payload: EventPayload) => void): void {
+  subscribe(topic: string, handler: (payload: EventPayload) => void | Promise<void>): void {
     const existing = this.handlers.get(topic) ?? [];
     this.handlers.set(topic, [...existing, handler]);
   }

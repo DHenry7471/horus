@@ -19,7 +19,7 @@ export interface EventPayload {
 
 export interface IEventBus {
   publish(topic: string, data: unknown, correlationId?: string): Promise<void>;
-  subscribe(topic: string, handler: (payload: EventPayload) => void): void;
+  subscribe(topic: string, handler: (payload: EventPayload) => void | Promise<void>): void;
   unsubscribeAll(): void;
 }
 
