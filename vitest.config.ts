@@ -16,6 +16,9 @@ export default defineConfig({
         'agents/**',
         '**/node_modules/**',
         '**/*.config.*',
+        '**/.eslintrc.*',
+        'quality-dashboard/**',
+        '**/server.ts',
       ],
       thresholds: {
         lines: 80,
