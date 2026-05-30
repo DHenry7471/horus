@@ -59,14 +59,17 @@ jobs:
       - name: Clone claude_agents and start MCP server
         run: |
           git clone https://github.com/DHenry7471/claude_agents.git /tmp/claude_agents
-          cd /tmp/claude_agents
+          cd /tmp/claude_agents/mcp
           npm ci
+          npm run build
           npm start &
           echo "MCP_PID=$!" >> "$GITHUB_ENV"
           # Wait for server to be ready (up to 30s)
           for i in $(seq 1 15); do
             curl -sf "http://localhost:3000/health" && break || sleep 2
           done
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Build report payload
         id: payload
