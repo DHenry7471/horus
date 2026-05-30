@@ -56,20 +56,8 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Clone claude_agents and start MCP server
-        run: |
-          git clone https://github.com/DHenry7471/claude_agents.git /tmp/claude_agents
-          cd /tmp/claude_agents/mcp
-          npm ci
-          npm run build
-          npm start &
-          echo "MCP_PID=$!" >> "$GITHUB_ENV"
-          # Wait for server to be ready (up to 30s)
-          for i in $(seq 1 15); do
-            curl -sf "http://localhost:3000/health" && break || sleep 2
-          done
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Clone claude_agents
+        run: git clone --depth 1 https://github.com/DHenry7471/claude_agents.git /tmp/claude_agents
 
       - name: Build report payload
         id: payload
@@ -94,12 +82,9 @@ jobs:
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
         env:
-          CLAUDE_AGENTS_MCP_URL: 'http://localhost:3000'
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_AGENTS_DIR: '/tmp/claude_agents/agents'
           CLAUDE_AGENTS_TIMEOUT: '180000'
-
-      - name: Stop MCP agent server
-        if: always()
-        run: kill "$MCP_PID" 2>/dev/null || true
 
       - name: Detect BLOCK verdict
         id: verdict
