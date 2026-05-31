@@ -124,6 +124,13 @@ async function generate() {
     JSON.stringify(snapshot, null, 2)
   );
 
+  // Copy flakiness report if available
+  const flakinessReportSrc = path.join(REPORTS_DIR, 'flakiness-report.json');
+  if (fs.existsSync(flakinessReportSrc)) {
+    fs.copyFileSync(flakinessReportSrc, path.join(DIST_DIR, 'flakiness-report.json'));
+    console.info('   Flakiness report copied.');
+  }
+
   // ── Iris enrichment ──────────────────────────────────────────────────────
   // Call the Iris agent with the history JSON. It returns an HTML snippet
   // (Output A) that we inject into the dashboard just before </body>.
