@@ -22,9 +22,13 @@ if (!agentArg || taskParts.length === 0) {
 }
 
 runAgent(agentArg, taskParts.join(' '))
-  .then(({ output }) => {
+  .then(({ output, model, stopReason, usage }) => {
     process.stdout.write(output);
     if (!output.endsWith('\n')) process.stdout.write('\n');
+    const cacheInfo = usage.cacheReadTokens > 0
+      ? ` | cache_read=${usage.cacheReadTokens}`
+      : ` | cache_write=${usage.cacheCreationTokens}`;
+    console.error(`[run-agent] model=${model} stop=${stopReason} in=${usage.inputTokens} out=${usage.outputTokens}${cacheInfo}`);
   })
   .catch((err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
