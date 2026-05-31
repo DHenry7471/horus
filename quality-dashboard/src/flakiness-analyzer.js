@@ -99,6 +99,7 @@ function analyze() {
   };
 
   const reportPath = path.join(REPORTS_DIR, 'flakiness-report.json');
+  fs.mkdirSync(REPORTS_DIR, { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
 
   console.info(`✅ Flakiness analysis complete`);
