@@ -93,7 +93,7 @@ E2E tests use a thin `OrderApiClient` class (not a full Page Object, since the s
 
 ### AI agents
 
-`agents/run-agent.ts` calls the Anthropic API directly. It reads agent system prompts from markdown files in `CLAUDE_AGENTS_DIR` (defaults to `/tmp/claude_agents/agents`). The agent slug map is in `SLUG_ALIASES` at the top of that file. Set `ANTHROPIC_API_KEY` to use any agent command.
+`agents/run-agent.ts` is a thin CLI wrapper around the `claude-agents` npm package (installed from `../claude_agents/mcp`). Agent system prompts are bundled into the package — no `CLAUDE_AGENTS_DIR` or separate checkout needed. Set `ANTHROPIC_API_KEY` to use any agent command. To call an agent programmatically, import `runAgent` directly from `claude-agents`.
 
 ### Path aliases (vitest.config.ts)
 
