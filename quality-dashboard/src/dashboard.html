@@ -553,6 +553,11 @@
           <div class="metric-value" style="color:var(--integ)" id="integ-count">—</div>
           <div class="metric-sub" id="integ-sub">—</div>
         </div>
+        <div class="metric-card e2e fade-up">
+          <div class="metric-label">E2E Tests</div>
+          <div class="metric-value" style="color:var(--e2e)" id="e2e-count">—</div>
+          <div class="metric-sub" id="e2e-sub">—</div>
+        </div>
       </div>
 
       <div class="grid-2">
@@ -775,6 +780,9 @@
     document.getElementById('integ-count').textContent = layers.integration.total;
     document.getElementById('integ-sub').textContent =
       `${layers.integration.passed} passed · ${layers.integration.failed} failed`;
+    document.getElementById('e2e-count').textContent = layers.e2e.total;
+    document.getElementById('e2e-sub').textContent =
+      `${layers.e2e.passed} passed · ${layers.e2e.failed} failed`;
 
     // Layer bars
     const up = pct(layers.unit.passed, layers.unit.total);
@@ -811,6 +819,11 @@
 
     // Pyramid
     renderPyramid(layers);
+
+    // Layer detail pages
+    renderLayerDetail('unit-detail', 'Unit', layers.unit);
+    renderLayerDetail('integ-detail', 'Integration', layers.integration);
+    renderLayerDetail('e2e-detail', 'E2E', layers.e2e);
 
     // Coverage detail
     renderCoverageDetail(coverage);
@@ -852,6 +865,40 @@
       <div style="margin-top:16px;font-size:12px;color:var(--muted);">
         Target ratio: ~70% unit · ~20% integration · ~10% E2E
       </div>
+    `;
+  }
+
+  function renderLayerDetail(elId, label, layer) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!layer || layer.total === 0) return; // leave empty-state message
+    const passRate = pct(layer.passed, layer.total);
+    const dur = layer.duration > 1000
+      ? (layer.duration / 1000).toFixed(1) + 's'
+      : layer.duration + 'ms';
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;">${layer.total}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Passed</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;color:var(--pass);">${layer.passed}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Failed</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;color:${layer.failed > 0 ? 'var(--fail)' : 'var(--muted)'};">${layer.failed}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Duration</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;">${dur}</div>
+        </div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:var(--radius);overflow:hidden;height:8px;">
+        <div style="height:100%;width:${passRate}%;background:${passRate === 100 ? 'var(--pass)' : passRate >= 90 ? 'var(--warn)' : 'var(--fail)'};transition:width .4s ease;"></div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted);">${passRate}% pass rate${layer.skipped > 0 ? ` · ${layer.skipped} skipped` : ''}</div>
     `;
   }
 
