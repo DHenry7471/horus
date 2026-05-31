@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Run unit tests
         run: npm run test:unit -- --reporter=json --outputFile=reports/unit-run-${{ matrix.run_number }}.json
         continue-on-error: true
