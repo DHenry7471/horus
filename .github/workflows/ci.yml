@@ -189,6 +189,12 @@ jobs:
           name: coverage-report
           path: reports/coverage/
 
+      - name: Restore trend history from GitHub Pages
+        run: |
+          mkdir -p quality-dashboard/dist
+          git fetch origin gh-pages 2>/dev/null || true
+          git show origin/gh-pages:dashboard/history.json > quality-dashboard/dist/history.json 2>/dev/null || true
+
       - name: Generate quality dashboard
         run: npm run dashboard:generate
         env:
