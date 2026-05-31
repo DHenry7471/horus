@@ -12,15 +12,16 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './reports/coverage',
+      // `include` is the primary gate — only services/** is instrumented.
+      // Everything else (shared/*, agents/*, quality-dashboard/*, tests/*)
+      // is excluded by virtue of not matching the include pattern.
+      // The explicit excludes below handle edge cases *within* services/**:
+      //   - server.ts  : Express bootstrap; not business logic, not worth measuring
+      //   - node_modules: safety net in case of hoisted packages under services/
+      include: ['services/**'],
       exclude: [
-        'shared/test-utils/**',
-        'tests/**',
-        'agents/**',
-        '**/node_modules/**',
-        '**/*.config.*',
-        '**/.eslintrc.*',
-        'quality-dashboard/**',
         '**/server.ts',
+        '**/node_modules/**',
       ],
       thresholds: {
         lines: 80,
