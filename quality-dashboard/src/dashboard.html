@@ -698,16 +698,18 @@
   // ── Data loading ──────────────────────────────────────────────────────────
 
   async function loadData() {
-    let latest = null, history = null;
+    let latest = null, history = null, flakiness = null;
 
     try {
-      const [latestRes, historyRes] = await Promise.all([
+      const [latestRes, historyRes, flakinessRes] = await Promise.all([
         fetch('./latest.json').catch(() => null),
         fetch('./history.json').catch(() => null),
+        fetch('./flakiness-report.json').catch(() => null),
       ]);
 
       if (latestRes?.ok) latest = await latestRes.json();
       if (historyRes?.ok) history = await historyRes.json();
+      if (flakinessRes?.ok) flakiness = await flakinessRes.json();
     } catch {
       // Running locally without generated data — use demo data
     }
@@ -718,7 +720,7 @@
       history = { runs: generateDemoHistory() };
     }
 
-    return { latest, history };
+    return { latest, history, flakiness };
   }
 
   function generateDemoData() {
@@ -972,7 +974,80 @@
 
   // ── Boot ──────────────────────────────────────────────────────────────────
 
-  loadData().then(({ latest, history }) => render(latest, history));
+
+  function renderFlakiness(data) {
+    const el = document.getElementById('flakiness-detail');
+    if (!el) return;
+    if (!data) return;
+
+    const { flakyTests = [], consistentlyFailing = [], summary = {}, analyzedAt, runsAnalyzed } = data;
+
+    if (flakyTests.length === 0 && consistentlyFailing.length === 0) {
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:24px;">
+          <span style="font-size:24px;">✅</span>
+          <div>
+            <div style="font-weight:500;color:var(--pass);">No flaky tests detected</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Analyzed ${runsAnalyzed} runs · ${new Date(analyzedAt).toLocaleString()}</div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const badge = (label, color) =>
+      `<span style="background:${color}22;color:${color};border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500;">${label}</span>`;
+
+    const rows = [
+      ...flakyTests.map(t => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;word-break:break-all;">${t.name}</td>
+          <td style="padding:10px 12px;text-align:center;font-family:var(--font-mono);color:var(--warn);">${t.passCount}/${t.total}</td>
+          <td style="padding:10px 12px;text-align:center;">${badge('FLAKY', '#f59e0b')}</td>
+        </tr>`),
+      ...consistentlyFailing.map(t => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;word-break:break-all;">${t.name}</td>
+          <td style="padding:10px 12px;text-align:center;font-family:var(--font-mono);color:var(--fail);">0/${t.failCount}</td>
+          <td style="padding:10px 12px;text-align:center;">${badge('FAILING', '#ef4444')}</td>
+        </tr>`),
+    ].join('');
+
+    const alwaysFailing = summary.alwaysFailing ?? consistentlyFailing.length;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+        <div class="metric-card warn">
+          <div class="metric-label">Flaky</div>
+          <div class="metric-value" style="color:var(--warn)">${summary.flaky ?? flakyTests.length}</div>
+          <div class="metric-sub">Inconsistent across runs</div>
+        </div>
+        <div class="metric-card ${alwaysFailing > 0 ? 'fail' : ''}">
+          <div class="metric-label">Always Failing</div>
+          <div class="metric-value" style="color:${alwaysFailing > 0 ? 'var(--fail)' : 'var(--muted)'}">${alwaysFailing}</div>
+          <div class="metric-sub">Failed every run</div>
+        </div>
+        <div class="metric-card pass">
+          <div class="metric-label">Healthy</div>
+          <div class="metric-value" style="color:var(--pass)">${summary.healthy ?? 0}</div>
+          <div class="metric-sub">Consistent passes</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Test</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Passes</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);">
+        Analyzed ${runsAnalyzed} nightly runs · Last scan: ${new Date(analyzedAt).toLocaleString()}
+      </div>`;
+  }
+
+  loadData().then(({ latest, history, flakiness }) => { render(latest, history); renderFlakiness(flakiness); });
 </script>
 </body>
 </html>
+
