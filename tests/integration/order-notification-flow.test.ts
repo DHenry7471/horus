@@ -119,6 +119,24 @@ describe('Order → Notification Integration', () => {
     });
   });
 
+  // ── MockNotificationSender.reset ────────────────────────────────────────
+
+  describe('MockNotificationSender reset', () => {
+    it('given sent notifications and shouldFail set when reset is called then clears state', async () => {
+      // Arrange
+      const request = { customerId: 'customer-reset', items: [{ productId: 'product-001', quantity: 1 }] };
+      await orderService.createOrder(request);
+      mockSender.shouldFail = true;
+
+      // Act
+      mockSender.reset();
+
+      // Assert
+      expect(mockSender.getSent()).toHaveLength(0);
+      expect(mockSender.shouldFail).toBe(false);
+    });
+  });
+
   // ── Notification failure resilience ─────────────────────────────────────
 
   describe('notification sender failure', () => {

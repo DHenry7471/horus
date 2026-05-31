@@ -12,7 +12,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { OrderService } from './OrderService.js';
 import { SqliteOrderRepository } from './SqliteOrderRepository.js';
 import { InProcessEventBus } from './InProcessEventBus.js';
-import { Order, ValidationError, NotFoundError } from './types.js';
+import { ValidationError, NotFoundError } from './types.js';
 
 // Production wiring — real implementations injected here.
 // Tests never touch this file; they construct OrderService directly with mocks.

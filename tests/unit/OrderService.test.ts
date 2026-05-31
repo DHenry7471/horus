@@ -197,6 +197,27 @@ describe('OrderService', () => {
     });
   });
 
+  // ── getOrder ─────────────────────────────────────────────────────────────
+
+  describe('getOrder', () => {
+    it('given an existing order when getOrder is called then returns the order', async () => {
+      // Arrange
+      const order = anOrder().build();
+      await mockRepo.save(order);
+
+      // Act
+      const result = await orderService.getOrder(order.id);
+
+      // Assert
+      expect(result.id).toBe(order.id);
+    });
+
+    it('given a nonexistent id when getOrder is called then throws not found error', async () => {
+      // Act & Assert
+      await expect(orderService.getOrder('ghost-id')).rejects.toThrow('Order not found');
+    });
+  });
+
   // ── getOrdersByCustomer ──────────────────────────────────────────────────
 
   describe('getOrdersByCustomer', () => {
