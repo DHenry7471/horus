@@ -10,14 +10,15 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import { OrderService } from './OrderService.js';
-import { MockRepository } from '../../../shared/test-utils/src/index.js';
-import { MockEventBus } from '../../../shared/test-utils/src/index.js';
+import { SqliteOrderRepository } from './SqliteOrderRepository.js';
+import { InProcessEventBus } from './InProcessEventBus.js';
 import { Order, ValidationError, NotFoundError } from './types.js';
 
-// In a real service these would be real adapters (PostgresRepository, RedisEventBus)
-// For this demo we use in-memory implementations — swap by changing these two lines
-const orderRepository = new MockRepository<Order>();
-const eventBus = new MockEventBus();
+// Production wiring — real implementations injected here.
+// Tests never touch this file; they construct OrderService directly with mocks.
+const DB_PATH = process.env.DB_PATH ?? ':memory:';
+const orderRepository = new SqliteOrderRepository(DB_PATH);
+const eventBus = new InProcessEventBus();
 const orderService = new OrderService(orderRepository, eventBus);
 
 const app = express();
