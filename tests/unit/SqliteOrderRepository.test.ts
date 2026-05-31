@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SqliteOrderRepository } from '../../services/order-service/src/SqliteOrderRepository.js';
-import { Order, OrderStatus } from '../../services/order-service/src/types.js';
+import { OrderStatus } from '../../services/order-service/src/types.js';
 import { anOrder } from '../../shared/test-utils/src/builders.js';
 
 describe('SqliteOrderRepository', () => {
