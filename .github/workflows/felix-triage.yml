@@ -56,9 +56,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Clone claude_agents
-        run: git clone --depth 1 https://github.com/DHenry7471/claude_agents.git /tmp/claude_agents
-
       - name: Build report payload
         id: payload
         run: |
@@ -83,8 +80,6 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_AGENTS_DIR: '/tmp/claude_agents/agents'
-          CLAUDE_AGENTS_TIMEOUT: '180000'
           FELIX_PAYLOAD: ${{ steps.payload.outputs.payload }}
 
       - name: Detect BLOCK verdict
