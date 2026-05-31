@@ -21,7 +21,7 @@ horus/
 │   ├── integration/            ← Cross-service tests with injected mocks (Vitest)
 │   └── e2e/                    ← Critical path smoke tests (Playwright)
 ├── agents/
-│   └── run-agent.ts            ← MCP client for claude_agents integration
+│   └── run-agent.ts            ← CLI wrapper for @wutangbanger/claude-agents
 ├── quality-dashboard/          ← Dashboard generator + HTML observatory
 ├── shared/
 │   └── test-utils/             ← Reusable mock injection library (@horus/test-utils)
@@ -160,7 +160,7 @@ The shared mock injection library is the infrastructure investment that makes cl
 
 ## AI Agents
 
-Horus integrates with [claude_agents](https://github.com/DHenry7471/claude_agents) via a thin MCP client (`agents/run-agent.ts`). Agents run against the MCP server started from that repo — no agent logic lives in Horus itself.
+Horus integrates with agents from the [`@wutangbanger/claude-agents`](https://www.npmjs.com/package/@wutangbanger/claude-agents) npm package. Agent prompts are bundled into the package — no MCP server or separate repo checkout needed.
 
 | Agent   | Role                                      | Trigger                              |
 |---------|-------------------------------------------|--------------------------------------|
@@ -170,9 +170,7 @@ Horus integrates with [claude_agents](https://github.com/DHenry7471/claude_agent
 | Greta   | Analyzes flakiness reports                | `npm run agents:greta`               |
 | Saxon   | Analyzes coverage summary                 | `npm run agents:saxon`               |
 
-**Environment variable:** Set `CLAUDE_AGENTS_MCP_URL` to point at a remote MCP server; defaults to `http://localhost:3000`.
-
-To run any agent locally, start the MCP server from the `claude_agents` repo then:
+**Required:** `ANTHROPIC_API_KEY` environment variable.
 
 ```bash
 npm run agents:felix    # triage latest test failures
@@ -180,6 +178,14 @@ npm run agents:percy    # review recent test-file diff
 npm run agents:iris     # enrich the dashboard
 npm run agents:greta    # analyze flakiness report
 npm run agents:saxon    # analyze coverage
+```
+
+To call an agent programmatically:
+
+```typescript
+import { runAgent } from '@wutangbanger/claude-agents';
+
+const { output } = await runAgent('felix', task);
 ```
 
 ---
@@ -194,5 +200,5 @@ npm run agents:saxon    # analyze coverage
 | Coverage    | V8 (via Vitest)                 |
 | CI/CD       | GitHub Actions                  |
 | Dashboard   | Vanilla HTML/JS (static)        |
-| AI Agents   | claude_agents (MCP)             |
+| AI Agents   | @wutangbanger/claude-agents     |
 | Monorepo    | npm workspaces                  |
