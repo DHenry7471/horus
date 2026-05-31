@@ -56,6 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [flakiness-scan]
     if: always()
+    permissions:
+      contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +89,20 @@ jobs:
           name: flakiness-report
           path: reports/flakiness-report.json
           retention-days: 30
+
+      - name: Deploy flakiness report to GitHub Pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          mkdir -p dashboard
+          cp reports/flakiness-report.json dashboard/flakiness-report.json
+          git add dashboard/flakiness-report.json
+          git diff --staged --quiet || git commit -m "chore: update flakiness report [skip ci]"
+          git push origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Open issue for flaky tests
         uses: actions/github-script@v7
