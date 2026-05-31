@@ -1,0 +1,7 @@
+{
+  "name": "@horus/insight-store",
+  "version": "1.0.0",
+  "description": "JSONL-backed persistence for AI agent insights",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

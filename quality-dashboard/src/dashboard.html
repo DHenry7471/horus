@@ -522,6 +522,20 @@
         Trend History
       </div>
     </div>
+    <div class="nav-section">
+      <div class="nav-label">Contracts</div>
+      <div class="nav-item" onclick="showPage('event-contracts', this)">
+        <div class="nav-dot" style="background:var(--integ)"></div>
+        Event Contracts
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">AI Agents</div>
+      <div class="nav-item" onclick="showPage('insights', this)">
+        <div class="nav-dot" style="background:var(--accent)"></div>
+        Agent Insights
+      </div>
+    </div>
   </nav>
 
   <!-- ── Main ── -->
@@ -631,7 +645,19 @@
     <div class="page" id="page-coverage">
       <div class="page-title">Code Coverage</div>
       <div class="page-subtitle">Thresholds: Lines 80% | Functions 80% | Branches 75% | Statements 80%</div>
+      <div id="coverage-drift-banner" style="display:none;margin-bottom:16px;"></div>
       <div class="grid-2" id="coverage-detail"></div>
+      <div class="card" style="margin-top:24px;">
+        <div class="card-title">Coverage Trend (last 30 runs)</div>
+        <div class="chart-wrap">
+          <svg id="coverage-trend-chart" viewBox="0 0 800 160" preserveAspectRatio="none"></svg>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:8px;font-size:11px;color:var(--muted);">
+          <span><span style="color:var(--pass);">●</span> Lines</span>
+          <span><span style="color:var(--unit);">●</span> Functions</span>
+          <span><span style="color:var(--integ);">●</span> Branches</span>
+        </div>
+      </div>
     </div>
 
     <!-- Unit tests page -->
@@ -670,6 +696,26 @@
       </div>
     </div>
 
+    <!-- Event Contracts page -->
+    <div class="page" id="page-event-contracts">
+      <div class="page-title">Event Contract Coverage</div>
+      <div class="page-subtitle">Which event topics have publish and subscribe tests? Run <code style="font-family:var(--font-mono);background:var(--surface-2);padding:1px 6px;border-radius:3px;">npm run check:event-contracts</code> to refresh.</div>
+      <div id="event-contracts-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;"></div>
+      <div class="card" id="event-contracts-detail">
+        <div class="empty-state">No event contract data. Run <code>npm run check:event-contracts:persist</code> then <code>npm run dashboard:generate</code>.</div>
+      </div>
+    </div>
+
+    <!-- Agent Insights page -->
+    <div class="page" id="page-insights">
+      <div class="page-title">Agent Insights</div>
+      <div class="page-subtitle">Persistent findings from Felix · Percy · Iris · Greta · Saxon</div>
+      <div id="insights-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;"></div>
+      <div class="card" id="insights-timeline">
+        <div class="empty-state">No agent insights yet. Run an agent to generate findings.</div>
+      </div>
+    </div>
+
     <!-- Trends page -->
     <div class="page" id="page-trends">
       <div class="page-title">Trend History</div>
@@ -698,18 +744,22 @@
   // ── Data loading ──────────────────────────────────────────────────────────
 
   async function loadData() {
-    let latest = null, history = null, flakiness = null;
+    let latest = null, history = null, flakiness = null, insights = null, coverageHistory = null;
 
     try {
-      const [latestRes, historyRes, flakinessRes] = await Promise.all([
+      const [latestRes, historyRes, flakinessRes, insightsRes, coverageHistoryRes] = await Promise.all([
         fetch('./latest.json').catch(() => null),
         fetch('./history.json').catch(() => null),
         fetch('./flakiness-report.json').catch(() => null),
+        fetch('./insights.json').catch(() => null),
+        fetch('./coverage-history.json').catch(() => null),
       ]);
 
       if (latestRes?.ok) latest = await latestRes.json();
       if (historyRes?.ok) history = await historyRes.json();
       if (flakinessRes?.ok) flakiness = await flakinessRes.json();
+      if (insightsRes?.ok) insights = await insightsRes.json();
+      if (coverageHistoryRes?.ok) coverageHistory = await coverageHistoryRes.json();
     } catch {
       // Running locally without generated data — use demo data
     }
@@ -720,7 +770,7 @@
       history = { runs: generateDemoHistory() };
     }
 
-    return { latest, history, flakiness };
+    return { latest, history, flakiness, insights, coverageHistory };
   }
 
   function generateDemoData() {
@@ -1046,7 +1096,171 @@
       </div>`;
   }
 
-  loadData().then(({ latest, history, flakiness }) => { render(latest, history); renderFlakiness(flakiness); });
+  // ── Event Contract Coverage ───────────────────────────────────────────────
+
+  function renderEventContracts(insights) {
+    const summaryEl = document.getElementById('event-contracts-summary');
+    const detailEl = document.getElementById('event-contracts-detail');
+    if (!summaryEl || !detailEl || !insights) return;
+
+    // Find the most recent event-contracts insight
+    const ecInsights = insights
+      .filter((i) => i.agentId === 'event-contracts')
+      .sort((a, b) => b.runAt.localeCompare(a.runAt));
+
+    if (ecInsights.length === 0) return;
+
+    const report = ecInsights[0].details;
+    if (!report || !report.gaps) return;
+
+    const { totalTopics, fullyCovered, publishOnly, subscribeOnly, fullyUncovered, gaps, analyzedAt } = report;
+
+    summaryEl.innerHTML = [
+      { label: 'Fully Covered', value: fullyCovered, color: 'var(--pass)' },
+      { label: 'Publish Only', value: publishOnly, color: 'var(--warn)' },
+      { label: 'Subscribe Only', value: subscribeOnly, color: 'var(--warn)' },
+      { label: 'Uncovered', value: fullyUncovered, color: fullyUncovered > 0 ? 'var(--fail)' : 'var(--muted)' },
+    ].map(({ label, value, color }) => `
+      <div class="metric-card">
+        <div class="metric-label">${label}</div>
+        <div class="metric-value" style="color:${color}">${value}</div>
+        <div class="metric-sub">of ${totalTopics} topics</div>
+      </div>`).join('');
+
+    const icon = (covered) => covered
+      ? `<span style="color:var(--pass);">✓</span>`
+      : `<span style="color:var(--fail);">✗</span>`;
+
+    const rows = gaps.map((gap) => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;">${gap.topic}</td>
+        <td style="padding:10px 12px;text-align:center;">${icon(gap.publishCovered)}</td>
+        <td style="padding:10px 12px;text-align:center;">${icon(gap.subscribeCovered)}</td>
+        <td style="padding:10px 12px;font-size:11px;color:var(--muted);">${gap.declaredIn.join(', ')}</td>
+      </tr>`).join('');
+
+    detailEl.innerHTML = `
+      <div class="card-title" style="margin-bottom:16px;">Topics (${totalTopics}) · Last analyzed ${new Date(analyzedAt).toLocaleString()}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Topic</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Publish Test</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Subscribe Test</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Declared In</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ── Coverage Drift ────────────────────────────────────────────────────────
+
+  function renderCoverageDrift(coverageHistory, latest) {
+    const bannerEl = document.getElementById('coverage-drift-banner');
+    const svgEl = document.getElementById('coverage-trend-chart');
+    if (!coverageHistory || coverageHistory.length === 0) return;
+
+    // Delta banner — compare last two snapshots
+    if (bannerEl && coverageHistory.length >= 2 && latest?.coverageDelta) {
+      const d = latest.coverageDelta;
+      const drops = Object.entries(d).filter(([, v]) => v < 0);
+      if (drops.length > 0) {
+        const msg = drops.map(([k, v]) => `${k}: ${v}%`).join(' · ');
+        bannerEl.style.display = 'block';
+        bannerEl.innerHTML = `
+          <div style="background:var(--fail)22;border:1px solid var(--fail)44;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--fail);font-size:16px;">▼</span>
+            <div>
+              <span style="color:var(--fail);font-weight:500;">Coverage drift detected</span>
+              <span style="color:var(--muted);margin-left:12px;font-size:12px;">${msg}</span>
+            </div>
+          </div>`;
+      }
+    }
+
+    // Trend SVG — lines, functions, branches over time
+    if (!svgEl || coverageHistory.length < 2) return;
+
+    const W = 800, H = 160, PAD = { t: 10, b: 20, l: 4, r: 4 };
+    const n = coverageHistory.length;
+    const x = (i) => PAD.l + (i / (n - 1)) * (W - PAD.l - PAD.r);
+    const y = (v) => PAD.t + ((100 - v) / 100) * (H - PAD.t - PAD.b);
+
+    const polyline = (vals, color) =>
+      `<polyline points="${vals.map((v, i) => `${x(i)},${y(v)}`).join(' ')}"
+        fill="none" stroke="${color}" stroke-width="2"
+        stroke-linejoin="round" stroke-linecap="round"/>`;
+
+    // Threshold reference lines
+    const thresholdLine = (threshold, color) =>
+      `<line x1="${PAD.l}" y1="${y(threshold)}" x2="${W - PAD.r}" y2="${y(threshold)}"
+        stroke="${color}" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>`;
+
+    svgEl.innerHTML = `
+      ${thresholdLine(80, 'var(--pass)')}
+      ${thresholdLine(75, 'var(--integ)')}
+      ${polyline(coverageHistory.map((s) => s.lines), 'var(--pass)')}
+      ${polyline(coverageHistory.map((s) => s.functions), 'var(--unit)')}
+      ${polyline(coverageHistory.map((s) => s.branches), 'var(--integ)')}
+    `;
+  }
+
+  // ── Agent Insights ────────────────────────────────────────────────────────
+
+  function renderInsights(insights) {
+    const summaryEl = document.getElementById('insights-summary');
+    const timelineEl = document.getElementById('insights-timeline');
+    if (!summaryEl || !timelineEl) return;
+    if (!insights || insights.length === 0) return;
+
+    const SEVERITY_COLOR = { critical: 'var(--fail)', warning: 'var(--warn)', info: 'var(--pass)' };
+    const AGENT_LABEL = { felix: 'Felix', percy: 'Percy', iris: 'Iris', greta: 'Greta', saxon: 'Saxon' };
+    const CATEGORY_LABEL = { failure: 'Failures', diff: 'Diff Review', dashboard: 'Dashboard', flakiness: 'Flakiness', coverage: 'Coverage' };
+
+    // Summary counts by severity
+    const counts = { critical: 0, warning: 0, info: 0 };
+    for (const i of insights) counts[i.severity] = (counts[i.severity] ?? 0) + 1;
+
+    summaryEl.innerHTML = ['critical', 'warning', 'info'].map(sev => `
+      <div class="metric-card ${sev === 'critical' ? 'fail' : sev === 'warning' ? 'warn' : 'pass'}">
+        <div class="metric-label">${sev.charAt(0).toUpperCase() + sev.slice(1)}</div>
+        <div class="metric-value" style="color:${SEVERITY_COLOR[sev]}">${counts[sev]}</div>
+        <div class="metric-sub">agent findings</div>
+      </div>`).join('');
+
+    // Timeline — most recent first
+    const sorted = [...insights].sort((a, b) => b.runAt.localeCompare(a.runAt));
+
+    const badge = (label, color) =>
+      `<span style="background:${color}22;color:${color};border:1px solid ${color}44;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500;">${label}</span>`;
+
+    const rows = sorted.map(insight => `
+      <div style="display:flex;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+        <div style="width:4px;min-height:40px;border-radius:2px;background:${SEVERITY_COLOR[insight.severity]};flex-shrink:0;margin-top:2px;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+            ${badge(AGENT_LABEL[insight.agentId] ?? insight.agentId, 'var(--accent)')}
+            ${badge(CATEGORY_LABEL[insight.category] ?? insight.category, 'var(--muted)')}
+            ${badge(insight.severity.toUpperCase(), SEVERITY_COLOR[insight.severity])}
+            <span style="font-size:11px;color:var(--muted);margin-left:auto;">${new Date(insight.runAt).toLocaleString()}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text);line-height:1.5;">${insight.summary}</div>
+        </div>
+      </div>`).join('');
+
+    timelineEl.innerHTML = `
+      <div class="card-title" style="margin-bottom:16px;">Recent Findings (${insights.length})</div>
+      <div>${rows}</div>`;
+  }
+
+  loadData().then(({ latest, history, flakiness, insights, coverageHistory }) => {
+    render(latest, history);
+    renderFlakiness(flakiness);
+    renderInsights(insights);
+    renderCoverageDrift(coverageHistory, latest);
+    renderEventContracts(insights);
+  });
 </script>
 </body>
 </html>

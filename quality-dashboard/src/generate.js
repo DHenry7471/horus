@@ -12,6 +12,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { randomUUID as crypto_randomUUID } from 'crypto';
+const crypto = { randomUUID: crypto_randomUUID };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = path.resolve(process.cwd(), 'reports');
@@ -124,11 +126,144 @@ async function generate() {
     JSON.stringify(snapshot, null, 2)
   );
 
-  // Copy flakiness report if available
-  const flakinessReportSrc = path.join(REPORTS_DIR, 'flakiness-report.json');
-  if (fs.existsSync(flakinessReportSrc)) {
-    fs.copyFileSync(flakinessReportSrc, path.join(DIST_DIR, 'flakiness-report.json'));
-    console.info('   Flakiness report copied.');
+  // Append coverage snapshot to history for drift tracking
+  if (coverage) {
+    const coverageHistoryPath = path.join(REPORTS_DIR, 'coverage-history.jsonl');
+    const coverageRecord = {
+      id: crypto.randomUUID(),
+      capturedAt: snapshot.generatedAt,
+      commitSha: snapshot.commitSha,
+      lines: coverage.lines,
+      functions: coverage.functions,
+      branches: coverage.branches,
+      statements: coverage.statements,
+    };
+    fs.appendFileSync(coverageHistoryPath, JSON.stringify(coverageRecord) + '\n', 'utf8');
+
+    // Compute delta vs previous snapshot and include in latest.json
+    const allSnapshots = fs.readFileSync(coverageHistoryPath, 'utf8')
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((l) => JSON.parse(l));
+
+    if (allSnapshots.length >= 2) {
+      const prev = allSnapshots[allSnapshots.length - 2];
+      const curr = allSnapshots[allSnapshots.length - 1];
+      const delta = {
+        lines: Math.round((curr.lines - prev.lines) * 10) / 10,
+        functions: Math.round((curr.functions - prev.functions) * 10) / 10,
+        branches: Math.round((curr.branches - prev.branches) * 10) / 10,
+        statements: Math.round((curr.statements - prev.statements) * 10) / 10,
+      };
+      snapshot.coverageDelta = delta;
+      // Re-write latest.json with delta included
+      fs.writeFileSync(path.join(DIST_DIR, 'latest.json'), JSON.stringify(snapshot, null, 2));
+      const anyDrop = Object.values(delta).some((v) => v < 0);
+      if (anyDrop) {
+        console.warn(`   Coverage drift detected: ${JSON.stringify(delta)}`);
+      } else {
+        console.info(`   Coverage delta: ${JSON.stringify(delta)}`);
+      }
+    }
+
+    // Publish last 30 snapshots for dashboard trend
+    const recentSnapshots = allSnapshots.slice(-30);
+    fs.writeFileSync(
+      path.join(DIST_DIR, 'coverage-history.json'),
+      JSON.stringify(recentSnapshots, null, 2)
+    );
+  }
+
+  // Compute flakiness from TestRunStore history (reports/test-runs/*.jsonl)
+  // Falls back to copying a pre-existing flakiness-report.json if no run history exists yet.
+  const testRunsDir = path.join(REPORTS_DIR, 'test-runs');
+  if (fs.existsSync(testRunsDir)) {
+    const runFiles = fs.readdirSync(testRunsDir).filter((f) => f.endsWith('.jsonl'));
+    if (runFiles.length > 0) {
+      const allRecords = [];
+      for (const file of runFiles) {
+        const raw = fs.readFileSync(path.join(testRunsDir, file), 'utf8');
+        const records = raw
+          .split('\n')
+          .filter((line) => line.trim().length > 0)
+          .map((line) => JSON.parse(line));
+        allRecords.push(...records);
+      }
+
+      // Group by testName → compute flake rate
+      const byTest = new Map();
+      for (const record of allRecords) {
+        const group = byTest.get(record.testName) ?? [];
+        group.push(record);
+        byTest.set(record.testName, group);
+      }
+
+      const flakyTests = [];
+      const consistentlyFailing = [];
+      let healthy = 0;
+
+      for (const [testName, records] of byTest) {
+        const total = records.length;
+        const passCount = records.filter((r) => r.passed).length;
+        const failCount = total - passCount;
+        const flakeRate = total > 0 ? failCount / total : 0;
+
+        if (flakeRate === 1) {
+          consistentlyFailing.push({ name: testName, failCount: total, total });
+        } else if (flakeRate > 0) {
+          flakyTests.push({ name: testName, passCount, failCount, total, flakeRate });
+        } else {
+          healthy++;
+        }
+      }
+
+      flakyTests.sort((a, b) => b.flakeRate - a.flakeRate);
+
+      const flakinessReport = {
+        analyzedAt: new Date().toISOString(),
+        runsAnalyzed: new Set(allRecords.map((r) => r.runAt.slice(0, 10))).size,
+        flakyTests,
+        consistentlyFailing,
+        summary: {
+          flaky: flakyTests.length,
+          alwaysFailing: consistentlyFailing.length,
+          healthy,
+        },
+      };
+
+      fs.writeFileSync(
+        path.join(DIST_DIR, 'flakiness-report.json'),
+        JSON.stringify(flakinessReport, null, 2)
+      );
+      console.info(`   Flakiness report computed: ${flakyTests.length} flaky, ${consistentlyFailing.length} always-failing, ${healthy} healthy.`);
+    }
+  } else {
+    // Legacy fallback — copy a pre-existing static report if present
+    const flakinessReportSrc = path.join(REPORTS_DIR, 'flakiness-report.json');
+    if (fs.existsSync(flakinessReportSrc)) {
+      fs.copyFileSync(flakinessReportSrc, path.join(DIST_DIR, 'flakiness-report.json'));
+      console.info('   Flakiness report copied (legacy).');
+    }
+  }
+
+  // Aggregate agent insights from JSONL files into a single insights.json
+  const insightsDir = path.join(REPORTS_DIR, 'agent-insights');
+  if (fs.existsSync(insightsDir)) {
+    const jsonlFiles = fs.readdirSync(insightsDir).filter((f) => f.endsWith('.jsonl'));
+    const allInsights = [];
+    for (const file of jsonlFiles) {
+      const raw = fs.readFileSync(path.join(insightsDir, file), 'utf8');
+      const records = raw
+        .split('\n')
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line));
+      allInsights.push(...records);
+    }
+    // Sort newest-first, keep last 200
+    allInsights.sort((a, b) => b.runAt.localeCompare(a.runAt));
+    const trimmed = allInsights.slice(0, 200);
+    fs.writeFileSync(path.join(DIST_DIR, 'insights.json'), JSON.stringify(trimmed, null, 2));
+    console.info(`   Agent insights aggregated: ${trimmed.length} records from ${jsonlFiles.length} agent(s).`);
   }
 
   // ── Iris enrichment ──────────────────────────────────────────────────────
