@@ -2,69 +2,92 @@
 
 > *"The all-seeing eye over your test suite."*
 
-Horus is a Staff SDET reference implementation demonstrating production-grade quality engineering across a TypeScript/Node.js microservice system. It is both a working system under test **and** the quality infrastructure around it.
+Horus is a quality observability platform for TypeScript/Node.js microservice systems. It tracks quality signals over time — flakiness rates, coverage drift, event contract gaps, and AI agent findings — and surfaces them in a persistent dashboard.
+
+The `order-service` and `notification-service` in this repo are **reference subjects**: realistic microservices used to demonstrate Horus's observability capabilities. They are not the product. Horus is.
 
 [![CI](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml)
 [![Quality Dashboard](https://img.shields.io/badge/dashboard-live-orange)](https://dhenry7471.github.io/horus/dashboard/)
 
 ---
 
-## What's Inside
+## What Horus Provides
+
+**`@horus/insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here.
+
+**`@horus/contracts`** — shared interfaces (`IAgentInsightStore`, `ITestRunStore`, `IEventBus`, `IRepository`) that keep the platform's boundaries clean and swappable.
+
+**`@horus/test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure.
+
+**Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
+
+**AI Agent pipeline** — five Claude agents (Felix, Percy, Iris, Greta, Saxon) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
+
+**Event contract analyzer** — static analysis that detects which event topics lack publish or subscribe test coverage, runnable as a CI gate.
+
+---
+
+## Structure
 
 ```
 horus/
-├── services/
-│   ├── order-service/          ← Order domain service (Express + business logic)
-│   └── notification-service/  ← Notification service (event-driven)
-├── tests/
-│   ├── unit/                   ← Pure business logic tests (Vitest)
-│   ├── integration/            ← Cross-service tests with injected mocks (Vitest)
-│   └── e2e/                    ← Critical path smoke tests (Playwright)
+├── shared/                         ← Horus platform packages
+│   ├── contracts/                  ← Interfaces only (@horus/contracts)
+│   ├── test-utils/                 ← Mock implementations (@horus/test-utils)
+│   └── insight-store/              ← Observability persistence (@horus/insight-store)
+├── quality-dashboard/              ← Dashboard generator + HTML observatory
 ├── agents/
-│   ├── run-agent.ts            ← CLI wrapper for @wutangbanger/claude-agents
-│   └── check-event-contracts.ts ← Static event contract coverage analyzer
-├── quality-dashboard/          ← Dashboard generator + HTML observatory
-├── shared/
-│   ├── contracts/              ← Pure TypeScript interfaces (@horus/contracts)
-│   ├── test-utils/             ← Reusable mock injection library (@horus/test-utils)
-│   └── insight-store/          ← Observability persistence layer (@horus/insight-store)
-├── reports/
-│   ├── agent-insights/         ← JSONL: one file per agent, persistent findings
-│   ├── test-runs/              ← JSONL: per-test run history for flakiness tracking
-│   └── coverage-history.jsonl  ← Coverage snapshots for drift detection
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                  ← Main quality gate pipeline
-│       ├── nightly-flakiness.yml   ← Automated flakiness detection
-│       ├── percy-pr-review.yml     ← AI test-change review on PRs
-│       └── felix-triage.yml        ← AI failure triage on CI failure
+│   ├── run-agent.ts                ← CLI wrapper; auto-persists output to AgentInsightStore
+│   └── check-event-contracts.ts   ← Static event contract coverage analyzer
+├── reports/                        ← Generated observability data
+│   ├── agent-insights/             ← JSONL: persistent AI agent findings per agent
+│   ├── test-runs/                  ← JSONL: per-test run history for flakiness tracking
+│   └── coverage-history.jsonl      ← Coverage snapshots for drift detection
+│
+├── services/                       ← Reference subjects (not the product)
+│   ├── order-service/              ← Example: order domain service (Express)
+│   └── notification-service/       ← Example: event-driven notification service
+├── tests/                          ← Tests against the reference subjects
+│   ├── unit/                       ← Pure business logic (Vitest)
+│   ├── integration/                ← Cross-service via injected mocks (Vitest)
+│   └── e2e/                        ← Critical path smoke tests (Playwright)
+│
+├── .github/workflows/
+│   ├── ci.yml                      ← Quality gate pipeline
+│   ├── nightly-flakiness.yml       ← Nightly flakiness scan
+│   ├── percy-pr-review.yml         ← AI test-change review on PRs
+│   └── felix-triage.yml            ← AI failure triage on CI failure
 └── docs/
-    ├── TEST_STRATEGY.md        ← Org-wide testing standards
-    └── decisions/              ← Architecture Decision Records (ADRs)
+    ├── TEST_STRATEGY.md
+    └── decisions/                  ← Architecture Decision Records
 ```
 
 ---
 
-## Core Principles
+## Design Principles
 
-### 1. The Test Pyramid
-Tests are distributed correctly — not the "ice cream cone" anti-pattern:
-- **Unit tests** (majority) — pure business logic, zero I/O, < 60s suite
-- **Integration tests** — cross-service interaction via injected mocks
-- **E2E tests** (minimal) — critical paths only via Playwright
+### Quality as a time series, not a snapshot
+Pass/fail on the last run answers the wrong question. Horus tracks signals over time:
+- **Flakiness rate** — computed from run history across multiple runs, not just the latest result
+- **Coverage drift** — delta between runs surfaces degradation that static thresholds miss
+- **Agent insights** — AI findings are persisted as structured records, queryable by agent, severity, and time window
+- **Event contract gaps** — statically detected before they become production incidents
 
-### 2. No External Dependencies in Integration Tests
-The `@horus/test-utils` library provides injectable mocks for all infrastructure:
+### No external dependencies in integration tests
+`@horus/test-utils` provides injectable mocks for all infrastructure. The reference services never touch a real database, broker, or email provider in tests:
 
 ```typescript
 import { MockEventBus, MockRepository, anOrder } from '@horus/test-utils';
 
 const eventBus = new MockEventBus();
 const repo = new MockRepository<Order>();
-const service = new OrderService(repo, eventBus); // ← inject, never instantiate internally
+const service = new OrderService(repo, eventBus);
 ```
 
-### 3. AAA Pattern + Descriptive Naming
+### Interfaces first
+Production code depends only on `@horus/contracts` interfaces. Test utilities implement those interfaces. This is what makes integration tests possible without real infrastructure — and what would let Horus be adapted to any domain by swapping the reference subjects.
+
+### AAA + descriptive naming
 ```typescript
 it('given PENDING order when confirming then transitions to CONFIRMED', async () => {
   // Arrange
@@ -78,13 +101,6 @@ it('given PENDING order when confirming then transitions to CONFIRMED', async ()
   expect(result.status).toBe(OrderStatus.CONFIRMED);
 });
 ```
-
-### 4. Quality as a Time Series, Not a Snapshot
-Pass/fail at a point in time is not enough. Horus tracks quality signals over time:
-- **Flakiness rate** — computed from run history, not just the last run
-- **Coverage drift** — delta between runs surfaces degradation that thresholds miss
-- **Agent insights** — AI findings are persisted to JSONL, not lost to stdout
-- **Event contract gaps** — statically detected before they reach production
 
 ---
 
