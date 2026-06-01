@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID as crypto_randomUUID } from 'crypto';
-import { TestRunStore, CoverageStore, computeFlakeScores, AgentInsightStore } from '../../shared/insight-store/src/index.js';
+import { TestRunStore, CoverageStore, computeFlakeScores, AgentInsightStore } from '../../../shared/insight-store/src/index.js';
 const crypto = { randomUUID: crypto_randomUUID };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
