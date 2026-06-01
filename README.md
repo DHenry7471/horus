@@ -6,7 +6,7 @@ Horus is a quality observability platform for TypeScript/Node.js microservice sy
 
 The `order-service` and `notification-service` in `example/` are **reference subjects**: realistic microservices used to demonstrate Horus's observability capabilities. They are not the product. Horus is.
 
-[![CI](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml)
+[![CI](https://github.com/DHenry7471/horus/actions/workflows/ci.yml/badge.svg)](https://github.com/DHenry7471/horus/actions/workflows/ci.yml)
 [![Quality Dashboard](https://img.shields.io/badge/dashboard-live-orange)](https://dhenry7471.github.io/horus/dashboard/)
 
 ---
@@ -154,19 +154,16 @@ it('given PENDING order when confirming then transitions to CONFIRMED', async ()
 # Install dependencies (pnpm workspaces)
 pnpm install
 
-# Run all tests (from example/)
+# Run all tests — unit, integration, ingest, contract, e2e (from example/)
 cd example && pnpm run test:all
 
-# Unit tests only (fastest feedback)
-pnpm run test:unit
+# Individual layers (run from example/)
+pnpm run test:unit         # fastest feedback — pure business logic
+pnpm run test:integration  # cross-service via injected mocks
+pnpm run test:contract     # consumer/provider contract tests
+pnpm run test:e2e          # HTTP smoke tests (auto-starts order-service on :3000)
 
-# Integration tests
-pnpm run test:integration
-
-# E2E tests (auto-starts order-service on :3000)
-pnpm run test:e2e
-
-# Ingest test results into JSONL stores
+# Ingest test results into JSONL stores (runs automatically inside test:all)
 pnpm run ingest
 
 # Check event contract coverage (exits 1 if gaps found — CI-gateable)
