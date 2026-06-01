@@ -4,7 +4,7 @@
 
 Horus is a quality observability platform for TypeScript/Node.js microservice systems. It tracks quality signals over time — flakiness rates, coverage drift, event contract gaps, and AI agent findings — and surfaces them in a persistent dashboard.
 
-The `order-service` and `notification-service` in this repo are **reference subjects**: realistic microservices used to demonstrate Horus's observability capabilities. They are not the product. Horus is.
+The `order-service` and `notification-service` in `example/` are **reference subjects**: realistic microservices used to demonstrate Horus's observability capabilities. They are not the product. Horus is.
 
 [![CI](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/horus/actions/workflows/ci.yml)
 [![Quality Dashboard](https://img.shields.io/badge/dashboard-live-orange)](https://dhenry7471.github.io/horus/dashboard/)
@@ -13,11 +13,11 @@ The `order-service` and `notification-service` in this repo are **reference subj
 
 ## What Horus Provides
 
-**`@horus/insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here.
+**`@horus/insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here. Includes the `horus-ingest` CLI for ingesting any test runner's JSON output.
 
-**`@horus/contracts`** — shared interfaces (`IAgentInsightStore`, `ITestRunStore`, `IEventBus`, `IRepository`) that keep the platform's boundaries clean and swappable.
+**`@horus/contracts`** — shared interfaces (`IAgentInsightStore`, `ITestRunStore`, `IEventBus`, `IRepository`, `HorusConfig`) that keep the platform's boundaries clean and swappable.
 
-**`@horus/test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure.
+**`@horus/test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure. Private — not published to npm.
 
 **Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
 
@@ -27,39 +27,81 @@ The `order-service` and `notification-service` in this repo are **reference subj
 
 ---
 
+## Installing from npm
+
+### Primary path: post-run ingestion (any test runner)
+
+Works with Vitest, Jest, Mocha, Pytest — any runner that emits JSON output.
+
+```bash
+pnpm add @horus/contracts @horus/insight-store
+```
+
+```yaml
+# .github/workflows/ci.yml
+- name: Run tests
+  run: pnpm exec vitest run --reporter=json --outputFile=reports/results.json
+
+- name: Ingest results into Horus
+  run: |
+    pnpm exec horus-ingest --file reports/unit-results.json --layer unit
+    pnpm exec horus-ingest --file reports/integration-results.json --layer integration
+```
+
+Records land in `reports/test-runs/<layer>.jsonl` and feed the flakiness dashboard.
+
+### Secondary path: Vitest inline reporter (opt-in)
+
+If you prefer zero-config capture within Vitest, `HorusVitestReporter` writes records automatically after each test. Note the Vitest Reporter API can break between major versions.
+
+```ts
+// vitest.config.ts
+import { HorusVitestReporter } from '@horus/insight-store';
+
+export default defineConfig({
+  test: {
+    reporters: ['default', new HorusVitestReporter({ reportsDir: './reports' })],
+  },
+});
+```
+
+---
+
 ## Structure
 
 ```
 horus/
-├── shared/                         ← Horus platform packages
+├── shared/                         ← Publishable packages
 │   ├── contracts/                  ← Interfaces only (@horus/contracts)
-│   ├── test-utils/                 ← Mock implementations (@horus/test-utils)
+│   ├── test-utils/                 ← Mock implementations (private, domain-coupled)
 │   └── insight-store/              ← Observability persistence (@horus/insight-store)
-├── quality-dashboard/              ← Dashboard generator + HTML observatory
-├── agents/
-│   ├── run-agent.ts                ← CLI wrapper; auto-persists output to AgentInsightStore
-│   └── check-event-contracts.ts   ← Static event contract coverage analyzer
-├── reports/                        ← Generated observability data
-│   ├── agent-insights/             ← JSONL: persistent AI agent findings per agent
-│   ├── test-runs/                  ← JSONL: per-test run history for flakiness tracking
-│   └── coverage-history.jsonl      ← Coverage snapshots for drift detection
-│
-├── services/                       ← Reference subjects (not the product)
-│   ├── order-service/              ← Example: order domain service (Express)
-│   └── notification-service/       ← Example: event-driven notification service
-├── tests/                          ← Tests against the reference subjects
-│   ├── unit/                       ← Pure business logic (Vitest)
-│   ├── integration/                ← Cross-service via injected mocks (Vitest)
-│   └── e2e/                        ← Critical path smoke tests (Playwright)
-│
-├── .github/workflows/
-│   ├── ci.yml                      ← Quality gate pipeline
-│   ├── nightly-flakiness.yml       ← Nightly flakiness scan
-│   ├── percy-pr-review.yml         ← AI test-change review on PRs
-│   └── felix-triage.yml            ← AI failure triage on CI failure
-└── docs/
-    ├── TEST_STRATEGY.md
-    └── decisions/                  ← Architecture Decision Records
+├── example/                        ← Reference implementation (private)
+│   ├── services/
+│   │   ├── order-service/          ← Express REST API
+│   │   └── notification-service/   ← Event-driven service
+│   ├── tests/
+│   │   ├── unit/                   ← Pure business logic (Vitest)
+│   │   ├── integration/            ← Cross-service via injected mocks (Vitest)
+│   │   ├── contract/               ← Consumer/provider contract tests (Vitest)
+│   │   └── e2e/                    ← HTTP smoke tests (Playwright)
+│   ├── agents/                     ← AI agent CLI wrappers
+│   ├── quality-dashboard/          ← Dashboard generator + static HTML
+│   ├── reports/                    ← Generated observability data
+│   │   ├── agent-insights/         ← JSONL: AI agent findings
+│   │   ├── test-runs/              ← JSONL: per-test history
+│   │   └── coverage-history.jsonl  ← Coverage snapshots
+│   ├── vitest.config.ts
+│   ├── playwright.config.ts
+│   └── package.json
+├── docs/
+│   ├── TEST_STRATEGY.md
+│   └── decisions/                  ← Architecture Decision Records
+├── pnpm-workspace.yaml
+└── .github/workflows/
+    ├── ci.yml
+    ├── nightly-flakiness.yml
+    ├── percy-pr-review.yml
+    └── felix-triage.yml
 ```
 
 ---
@@ -104,32 +146,35 @@ it('given PENDING order when confirming then transitions to CONFIRMED', async ()
 
 ---
 
-## Quick Start
+## Quick Start (reference implementation)
 
-> **Requires Node.js ≥ 22.5.0** (the order-service uses `node:sqlite`, which ships in Node 22.5+).
+> **Requires Node.js ≥ 22.5.0** and **pnpm ≥ 9.0.0**.
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (pnpm workspaces)
+pnpm install
 
-# Run all tests
-npm run test:all
+# Run all tests (from example/)
+cd example && pnpm run test:all
 
 # Unit tests only (fastest feedback)
-npm run test:unit
+pnpm run test:unit
 
 # Integration tests
-npm run test:integration
+pnpm run test:integration
 
-# E2E tests (requires running server)
-npm run test:e2e
+# E2E tests (auto-starts order-service on :3000)
+pnpm run test:e2e
+
+# Ingest test results into JSONL stores
+pnpm run ingest
 
 # Check event contract coverage (exits 1 if gaps found — CI-gateable)
-npm run check:event-contracts
+pnpm run check:event-contracts
 
 # Generate quality dashboard
-npm run dashboard:generate
-npm run dashboard:serve
+pnpm run dashboard:generate
+pnpm run dashboard:serve
 ```
 
 ---
@@ -145,7 +190,7 @@ Push / PR
   ├── [Parallel] Event Contract Check  → blocks merge if uncovered topics found
   └── (main only) Dashboard            → publishes to GitHub Pages (Iris-enriched)
 
-PR touches tests/**
+PR touches example/tests/**
   └── Percy review → posts AI test-change analysis as PR comment
 
 CI fails on PR
@@ -187,7 +232,7 @@ reports/
 │   ├── saxon.jsonl       ← coverage findings
 │   └── event-contracts.jsonl ← contract gap findings
 ├── test-runs/
-│   ├── unit.jsonl        ← per-test run history (written by HorusVitestReporter)
+│   ├── unit.jsonl        ← per-test run history
 │   └── integration.jsonl
 └── coverage-history.jsonl ← coverage snapshots per run
 ```
@@ -198,10 +243,17 @@ Key exports:
 |---|---|
 | `AgentInsightStore` | Append/query agent findings by agent, severity, or time window |
 | `TestRunStore` | Per-test run history; feeds flakiness computation |
-| `HorusVitestReporter` | Vitest reporter plugin — auto-writes `TestRunRecord` after each test |
+| `HorusVitestReporter` | Vitest reporter plugin — inline capture (opt-in secondary path) |
 | `CoverageStore` | Coverage snapshots + delta between runs |
 | `computeFlakeScores` | Pure function: `TestRunRecord[]` → `FlakeScore[]` ranked by flake rate |
 | `analyzeEventContracts` | Static analyzer: scans source and tests for publish/subscribe gaps |
+
+CLI bin (installed with the package):
+
+```bash
+horus-ingest --file reports/unit-results.json --layer unit
+horus-ingest --file reports/integration-results.json --layer integration
+```
 
 ---
 
@@ -224,8 +276,8 @@ The shared mock injection library that makes clean integration tests possible.
 The `check-event-contracts` analyzer statically verifies that every event topic has tests on both sides of the contract:
 
 ```bash
-npm run check:event-contracts         # print report, exit 1 if gaps found
-npm run check:event-contracts:persist # same + write to AgentInsightStore
+pnpm run check:event-contracts         # print report, exit 1 if gaps found
+pnpm run check:event-contracts:persist # same + write to AgentInsightStore
 ```
 
 Example output:
@@ -252,20 +304,20 @@ Horus integrates with agents from the [`@wutangbanger/claude-agents`](https://ww
 
 | Agent | Role | Trigger |
 |---|---|---|
-| Percy | Reviews test file changes on PRs | PR touches `tests/**` or `*.test.ts` |
+| Percy | Reviews test file changes on PRs | PR touches `example/tests/**` or `*.test.ts` |
 | Felix | Triages CI failures, issues BLOCK verdict | CI workflow fails |
-| Iris | Enriches quality dashboard with insights | `npm run dashboard:generate` |
-| Greta | Analyzes flakiness reports | `npm run agents:greta` |
-| Saxon | Analyzes coverage summary | `npm run agents:saxon` |
+| Iris | Enriches quality dashboard with insights | `pnpm run dashboard:generate` |
+| Greta | Analyzes flakiness reports | `pnpm run agents:greta` |
+| Saxon | Analyzes coverage summary | `pnpm run agents:saxon` |
 
 **Required:** `ANTHROPIC_API_KEY` environment variable.
 
 ```bash
-npm run agents:felix    # triage latest test failures
-npm run agents:percy    # review recent test-file diff
-npm run agents:iris     # enrich the dashboard
-npm run agents:greta    # analyze flakiness report
-npm run agents:saxon    # analyze coverage
+pnpm run agents:felix    # triage latest test failures
+pnpm run agents:percy    # review recent test-file diff
+pnpm run agents:iris     # enrich the dashboard
+pnpm run agents:greta    # analyze flakiness report
+pnpm run agents:saxon    # analyze coverage
 ```
 
 Agent findings are persisted as `AgentInsight` records — severity (`info` / `warning` / `critical`) is extracted from the output and the full structured result is stored alongside the summary.
@@ -277,6 +329,7 @@ Agent findings are persisted as `AgentInsight` records — severity (`info` / `w
 - [Test Strategy](./docs/TEST_STRATEGY.md) — testing philosophy, layer definitions, quality gates
 - [ADR-001: Mock injection over real infrastructure](./docs/decisions/ADR-001-mock-injection.md)
 - [ADR-002: Vitest over Jest](./docs/decisions/ADR-002-vitest.md)
+- [ADR-004: Publishable packages + pnpm migration](./docs/decisions/ADR-004-publishable-packages.md)
 
 ---
 
@@ -292,4 +345,4 @@ Agent findings are persisted as `AgentInsight` records — severity (`info` / `w
 | CI/CD | GitHub Actions |
 | Dashboard | Vanilla HTML/JS (static) |
 | AI Agents | @wutangbanger/claude-agents |
-| Monorepo | npm workspaces |
+| Monorepo | pnpm workspaces |

@@ -13,7 +13,7 @@
 
 import type { Reporter, TestCase } from 'vitest/node';
 import { TestRunStore } from './TestRunStore.js';
-import { TestRunRecord } from '@horus/contracts';
+import { TestRunRecord, HorusConfig } from '@horus/contracts';
 import crypto from 'node:crypto';
 import path from 'node:path';
 
@@ -29,9 +29,13 @@ export class HorusVitestReporter implements Reporter {
   private readonly store: TestRunStore;
   private readonly commitSha: string;
 
-  constructor(reportsDir: string) {
+  constructor(config: HorusConfig | string) {
+    const reportsDir = typeof config === 'string' ? config : config.reportsDir;
+    this.commitSha =
+      (typeof config !== 'string' ? config.commitSha : undefined) ??
+      process.env.GITHUB_SHA ??
+      'local';
     this.store = new TestRunStore(path.resolve(reportsDir));
-    this.commitSha = process.env.GITHUB_SHA ?? 'local';
   }
 
   async onTestCaseResult(testCase: TestCase): Promise<void> {
