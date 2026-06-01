@@ -146,6 +146,22 @@ export interface CoverageDelta {
   belowThreshold: boolean;
 }
 
+// ── Horus Configuration ───────────────────────────────────────────────────
+
+export interface HorusConfig {
+  /** Directory where all JSONL report files are written. Default: './reports' */
+  reportsDir: string;
+  /** Git SHA for test run records. Default: process.env.GITHUB_SHA ?? 'local' */
+  commitSha?: string;
+  /** Coverage thresholds for delta/belowThreshold calculation */
+  coverage?: {
+    lines: number;
+    functions: number;
+    branches: number;
+    statements: number;
+  };
+}
+
 // ── Repository ────────────────────────────────────────────────────────────
 
 export interface IRepository<T extends { id: string }> {

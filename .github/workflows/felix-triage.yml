@@ -20,20 +20,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download unit test results
         uses: actions/download-artifact@v4
         with:
           name: unit-test-results
-          path: reports/
+          path: example/reports/
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -42,7 +46,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: integration-test-results
-          path: reports/
+          path: example/reports/
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -51,13 +55,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: e2e-test-results
-          path: reports/
+          path: example/reports/
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Build report payload
         id: payload
+        working-directory: example
         run: |
           UNIT=$(cat reports/unit-results.json 2>/dev/null || echo 'null')
           INTG=$(cat reports/integration-results.json 2>/dev/null || echo 'null')
@@ -73,8 +78,9 @@ jobs:
 
       - name: Run Felix agent
         id: felix
+        working-directory: example
         run: |
-          OUTPUT=$(npx tsx agents/run-agent.ts felix "$FELIX_PAYLOAD")
+          OUTPUT=$(pnpm exec tsx agents/run-agent.ts felix "$FELIX_PAYLOAD")
           echo "output<<EOF" >> "$GITHUB_OUTPUT"
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"

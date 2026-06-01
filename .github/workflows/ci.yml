@@ -18,20 +18,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript type check
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: ESLint
-        run: npm run lint
+        run: pnpm run lint
 
   # ── Stage 2: Unit tests (run in parallel with lint) ────────────────────
   unit-tests:
@@ -40,24 +44,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run unit tests with coverage
-        run: npm run test:coverage
+        run: pnpm run test:coverage
+        working-directory: example
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-report
-          path: reports/coverage/
+          path: example/reports/coverage/
           retention-days: 7
 
       - name: Upload unit test results
@@ -65,14 +74,14 @@ jobs:
         if: always()
         with:
           name: unit-test-results
-          path: reports/unit-results.json
+          path: example/reports/unit-results.json
           retention-days: 7
 
       - name: Coverage summary comment
         uses: davelosert/vitest-coverage-report-action@v2
         if: github.event_name == 'pull_request'
         with:
-          json-summary-path: reports/coverage/coverage-summary.json
+          json-summary-path: example/reports/coverage/coverage-summary.json
 
   # ── Stage 3: Integration tests ──────────────────────────────────────────
   integration-tests:
@@ -82,24 +91,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run integration tests
-        run: npm run test:integration
+        run: pnpm run test:integration
+        working-directory: example
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-results
-          path: reports/integration-results.json
+          path: example/reports/integration-results.json
           retention-days: 7
 
   # ── Stage 4: E2E tests (gated on integration passing) ──────────────────
@@ -110,20 +124,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: example
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: pnpm run test:e2e
+        working-directory: example
         env:
           CI: true
 
@@ -132,7 +152,7 @@ jobs:
         if: always()
         with:
           name: playwright-report
-          path: reports/playwright-report/
+          path: example/reports/playwright-report/
           retention-days: 7
 
       - name: Upload E2E test results
@@ -140,7 +160,7 @@ jobs:
         if: always()
         with:
           name: e2e-test-results
-          path: reports/e2e-results.json
+          path: example/reports/e2e-results.json
           retention-days: 7
 
   # ── Stage 5: Generate & publish quality dashboard ───────────────────────
@@ -156,47 +176,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download unit test results
         uses: actions/download-artifact@v4
         with:
           name: unit-test-results
-          path: reports/
+          path: example/reports/
 
       - name: Download integration test results
         uses: actions/download-artifact@v4
         with:
           name: integration-test-results
-          path: reports/
+          path: example/reports/
 
       - name: Download e2e test results
         uses: actions/download-artifact@v4
         with:
           name: e2e-test-results
-          path: reports/
+          path: example/reports/
 
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
-          path: reports/coverage/
+          path: example/reports/coverage/
 
       - name: Restore trend history from GitHub Pages
         run: |
-          mkdir -p quality-dashboard/dist
+          mkdir -p example/quality-dashboard/dist
           git fetch origin gh-pages 2>/dev/null || true
-          git show origin/gh-pages:dashboard/history.json > quality-dashboard/dist/history.json 2>/dev/null || true
+          git show origin/gh-pages:dashboard/history.json > example/quality-dashboard/dist/history.json 2>/dev/null || true
 
       - name: Generate quality dashboard
-        run: npm run dashboard:generate
+        run: pnpm run dashboard:generate
+        working-directory: example
         env:
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
@@ -206,5 +231,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: quality-dashboard/dist
+          publish_dir: example/quality-dashboard/dist
           destination_dir: dashboard

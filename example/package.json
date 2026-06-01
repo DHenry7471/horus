@@ -1,0 +1,37 @@
+{
+  "name": "@horus/example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "vitest run tests/unit --reporter=json --outputFile=reports/unit-results.json",
+    "test:integration": "vitest run tests/integration --reporter=json --outputFile=reports/integration-results.json",
+    "test:e2e": "playwright test tests/e2e",
+    "test:contract": "vitest run tests/contract/consumer.order-notification.test.ts && vitest run tests/contract/provider.order-service.test.ts",
+    "test:all": "pnpm run test:unit && pnpm run test:integration && pnpm run test:contract && pnpm run test:e2e",
+    "test:coverage": "mkdir -p reports && vitest run tests/unit tests/integration --coverage --reporter=json --outputFile=reports/unit-results.json",
+    "dashboard:generate": "tsx quality-dashboard/src/generate.js",
+    "dashboard:serve": "pnpm dlx serve quality-dashboard/dist",
+    "agents:felix": "tsx agents/run-agent.ts felix \"$(cat reports/unit-results.json reports/integration-results.json 2>/dev/null | jq -sc '.')\"",
+    "flakiness:analyze": "tsx agents/generate-flakiness-report.ts",
+    "agents:greta": "pnpm run flakiness:analyze && tsx agents/run-agent.ts greta \"$(cat reports/flakiness-report.json)\"",
+    "agents:iris": "tsx agents/run-agent.ts iris \"$(cat quality-dashboard/dist/history.json 2>/dev/null || echo '{\"runs\":[]}')\"",
+    "agents:percy": "tsx agents/run-agent.ts percy \"$(git diff HEAD~1 -- 'tests/**' '**/*.test.ts' '**/*.spec.ts' 2>/dev/null)\"",
+    "agents:saxon": "tsx agents/run-agent.ts saxon \"$(cat reports/coverage/coverage-summary.json 2>/dev/null || echo '{}')\"",
+    "check:event-contracts": "tsx agents/check-event-contracts.ts",
+    "check:event-contracts:persist": "tsx agents/check-event-contracts.ts --persist"
+  },
+  "dependencies": {
+    "@horus/contracts": "workspace:*",
+    "@horus/insight-store": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.1.7",
+    "@wutangbanger/claude-agents": "^1.1.0",
+    "express": "^4.19.0",
+    "tsx": "^4.11.0",
+    "vitest": "^4.1.7"
+  }
+}

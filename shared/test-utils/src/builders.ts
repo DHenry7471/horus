@@ -6,8 +6,8 @@
  * Eliminates brittle fixture files and makes test intent obvious.
  */
 
-import { Order, OrderStatus, OrderItem } from '../../../services/order-service/src/types.js';
-import { Notification, NotificationChannel, NotificationStatus } from '../../../services/notification-service/src/types.js';
+import { Order, OrderStatus, OrderItem } from '../../../example/services/order-service/src/types.js';
+import { Notification, NotificationChannel, NotificationStatus } from '../../../example/services/notification-service/src/types.js';
 
 // ── Order Builder ──────────────────────────────────────────────────────────
 

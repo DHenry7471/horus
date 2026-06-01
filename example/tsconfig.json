@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "@horus/contracts": ["../shared/contracts/src/index.ts"],
+      "@horus/test-utils": ["../shared/test-utils/src/index.ts"],
+      "@horus/insight-store": ["../shared/insight-store/src/index.ts"]
+    }
+  },
+  "include": ["services/**/*", "tests/**/*", "agents/**/*", "quality-dashboard/**/*"]
+}

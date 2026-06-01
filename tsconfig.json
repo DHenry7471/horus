@@ -20,6 +20,6 @@
       "@horus/insight-store": ["./shared/insight-store/src/index.ts"]
     }
   },
-  "include": ["services/**/*", "shared/**/*", "tests/**/*", "quality-dashboard/**/*"],
+  "include": ["shared/**/*"],
   "exclude": ["node_modules", "dist", "**/dist"]
 }

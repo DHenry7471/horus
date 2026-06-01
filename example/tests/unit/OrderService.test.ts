@@ -13,7 +13,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { OrderService, ORDER_EVENTS } from '../../services/order-service/src/OrderService.js';
 import { MockRepository, MockEventBus } from '@horus/test-utils';
 import { Order, OrderStatus } from '../../services/order-service/src/types.js';
-import { anOrder } from '../../shared/test-utils/src/builders.js';
+import { anOrder } from '@horus/test-utils';
 
 describe('OrderService', () => {
   let orderService: OrderService;

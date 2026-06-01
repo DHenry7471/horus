@@ -10,13 +10,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { TestRunRecord, ITestRunStore } from '@horus/contracts';
+import { TestRunRecord, ITestRunStore, HorusConfig } from '@horus/contracts';
 
 export class TestRunStore implements ITestRunStore {
   private readonly dir: string;
 
-  constructor(baseDir: string) {
-    this.dir = path.resolve(baseDir, 'test-runs');
+  constructor(config: HorusConfig | string) {
+    const reportsDir = typeof config === 'string' ? config : config.reportsDir;
+    this.dir = path.resolve(reportsDir, 'test-runs');
     fs.mkdirSync(this.dir, { recursive: true });
   }
 

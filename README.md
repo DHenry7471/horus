@@ -106,6 +106,8 @@ it('given PENDING order when confirming then transitions to CONFIRMED', async ()
 
 ## Quick Start
 
+> **Requires Node.js ≥ 22.5.0** (the order-service uses `node:sqlite`, which ships in Node 22.5+).
+
 ```bash
 # Install dependencies
 npm install
@@ -282,6 +284,7 @@ Agent findings are persisted as `AgentInsight` records — severity (`info` / `w
 
 | Layer | Tool |
 |---|---|
+| Runtime | Node.js ≥ 22.5.0 |
 | Language | TypeScript 5 |
 | Unit/Integration | Vitest |
 | E2E | Playwright |

@@ -23,24 +23,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Create reports directory
         run: mkdir -p reports
+        working-directory: example
 
       - name: Run unit tests
-        run: npm run test:unit -- --reporter=json --outputFile=reports/unit-run-${{ matrix.run_number }}.json
+        run: pnpm run test:unit -- --reporter=json --outputFile=reports/unit-run-${{ matrix.run_number }}.json
+        working-directory: example
         continue-on-error: true
 
       - name: Run integration tests
-        run: npm run test:integration -- --reporter=json --outputFile=reports/integration-run-${{ matrix.run_number }}.json
+        run: pnpm run test:integration -- --reporter=json --outputFile=reports/integration-run-${{ matrix.run_number }}.json
+        working-directory: example
         continue-on-error: true
 
       - name: Upload run results
@@ -48,7 +55,7 @@ jobs:
         if: always()
         with:
           name: flakiness-run-${{ matrix.run_number }}
-          path: reports/
+          path: example/reports/
           retention-days: 14
 
   analyze-flakiness:
@@ -63,22 +70,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download all run results
         uses: actions/download-artifact@v4
         with:
-          path: reports/
+          path: example/reports/
 
       - name: Analyze flakiness
         run: node quality-dashboard/src/flakiness-analyzer.js
+        working-directory: example
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -87,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flakiness-report
-          path: reports/flakiness-report.json
+          path: example/reports/flakiness-report.json
           retention-days: 30
 
       - name: Deploy flakiness report to GitHub Pages
@@ -97,7 +109,7 @@ jobs:
           git fetch origin gh-pages
           git checkout gh-pages
           mkdir -p dashboard
-          cp reports/flakiness-report.json dashboard/flakiness-report.json
+          cp example/reports/flakiness-report.json dashboard/flakiness-report.json
           git add dashboard/flakiness-report.json
           git diff --staged --quiet || git commit -m "chore: update flakiness report [skip ci]"
           git push origin gh-pages
@@ -110,7 +122,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const reportPath = 'reports/flakiness-report.json';
+            const reportPath = 'example/reports/flakiness-report.json';
 
             if (!fs.existsSync(reportPath)) {
               console.log('No flakiness report found — all runs likely passed.');

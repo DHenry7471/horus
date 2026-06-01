@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
-import { HorusVitestReporter } from './shared/insight-store/src/HorusVitestReporter.js';
+import { HorusVitestReporter } from '../shared/insight-store/src/HorusVitestReporter.js';
 
 export default defineConfig({
   test: {
@@ -33,9 +33,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@horus/contracts': resolve(__dirname, './shared/contracts/src/index.ts'),
-      '@horus/test-utils': resolve(__dirname, './shared/test-utils/src/index.ts'),
-      '@horus/insight-store': resolve(__dirname, './shared/insight-store/src/index.ts'),
+      '@horus/contracts': resolve(__dirname, '../shared/contracts/src/index.ts'),
+      '@horus/test-utils': resolve(__dirname, '../shared/test-utils/src/index.ts'),
+      '@horus/insight-store': resolve(__dirname, '../shared/insight-store/src/index.ts'),
     },
   },
 });

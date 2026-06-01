@@ -14,13 +14,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { AgentInsight, IAgentInsightStore } from '@horus/contracts';
+import { AgentInsight, IAgentInsightStore, HorusConfig } from '@horus/contracts';
 
 export class AgentInsightStore implements IAgentInsightStore {
   private readonly dir: string;
 
-  constructor(baseDir: string) {
-    this.dir = path.resolve(baseDir, 'agent-insights');
+  constructor(config: HorusConfig | string) {
+    const reportsDir = typeof config === 'string' ? config : config.reportsDir;
+    this.dir = path.resolve(reportsDir, 'agent-insights');
     fs.mkdirSync(this.dir, { recursive: true });
   }
 
