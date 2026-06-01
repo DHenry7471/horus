@@ -43,8 +43,8 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7(vitest@4.1.7)
       '@wutangbanger/claude-agents':
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.1.0
+        version: 2.1.0
       express:
         specifier: ^4.19.0
         version: 4.22.2
@@ -585,8 +585,8 @@ packages:
   '@vitest/utils@4.1.7':
     resolution: {integrity: sha512-T532WBu791cBxJlCl6SO+J14l81DQx6uQHm1bQbmCDY7nqlEIgkza/UFnSBNaUtSf41unldDFjdOBYEQC4b5Hw==}
 
-  '@wutangbanger/claude-agents@2.0.0':
-    resolution: {integrity: sha512-20Khfbn8lQdeg+gZosBFqI7pz5I0hrL9IJQZXD5plCBHMTuvBkzv1RAkmgxacc8Hg3SNdSWbnG/YdS8i5kTBiA==}
+  '@wutangbanger/claude-agents@2.1.0':
+    resolution: {integrity: sha512-MMYGjzZL9cne08rRwvvAQDCqJR9Hrawhs8lqVJQV4jCbnM3umruwuGkO2vUFRZR/87BwglAlNIPHAyJfKg9YDg==}
     engines: {node: '>=20.0.0'}
     hasBin: true
 
@@ -2189,7 +2189,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@wutangbanger/claude-agents@2.0.0':
+  '@wutangbanger/claude-agents@2.1.0':
     dependencies:
       '@anthropic-ai/sdk': 0.52.0
       '@modelcontextprotocol/sdk': 1.29.0(zod@3.25.76)
