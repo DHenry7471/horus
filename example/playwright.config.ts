@@ -23,7 +23,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm run start --filter @wutangbanger/horus-order-service',
+    command: 'pnpm --filter @wutangbanger/horus-order-service run start',
     url: 'http://localhost:3000/health',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
