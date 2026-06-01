@@ -233,3 +233,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: example/quality-dashboard/dist
           destination_dir: dashboard
+          force_orphan: true

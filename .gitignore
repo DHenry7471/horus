@@ -2,7 +2,6 @@ node_modules/
 dist/
 reports/
 quality-dashboard/dist/
-dashboard/
 coverage/
 .env
 *.log
