@@ -5,7 +5,6 @@
  *   tsx agents/run-agent.ts <agent-name> "<task>"
  *
  * Programmatic usage:
- *   import { runAgent } from '@wutangbanger/claude-agents';
  *
  * Environment variables:
  *   ANTHROPIC_API_KEY      — required
@@ -13,8 +12,7 @@
  *   HORUS_REPORTS_DIR      — path to reports/ directory (default: ./reports)
  */
 
-import { runAgent } from '@wutangbanger/claude-agents';
-import { AgentInsightStore } from '@wutangbanger/horus-insight-store';
+import { runAgent, AgentInsightStore } from '@wutangbanger/horus-insight-store';
 import { AgentInsight, AgentInsightCategory, AgentInsightSeverity } from '@wutangbanger/horus-contracts';
 import crypto from 'node:crypto';
 import path from 'node:path';

@@ -16,7 +16,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@wutangbanger/horus-contracts": "workspace:*"
+    "@wutangbanger/horus-contracts": "workspace:*",
+    "@wutangbanger/claude-agents": "^2.1.0"
   },
   "peerDependencies": {
     "vitest": ">=1.0.0 <5.0.0"
