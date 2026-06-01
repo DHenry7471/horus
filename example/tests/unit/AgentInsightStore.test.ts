@@ -13,8 +13,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { AgentInsightStore } from '@horus/insight-store';
-import { AgentInsight } from '@horus/contracts';
+import { AgentInsightStore } from '@wutangbanger/horus-insight-store';
+import { AgentInsight } from '@wutangbanger/horus-contracts';
 
 // ── Fixture builder ────────────────────────────────────────────────────────
 

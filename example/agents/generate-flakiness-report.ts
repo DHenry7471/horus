@@ -14,7 +14,7 @@
 
 import path from 'node:path';
 import fs from 'node:fs';
-import { TestRunStore, computeFlakeScores } from '@horus/insight-store';
+import { TestRunStore, computeFlakeScores } from '@wutangbanger/horus-insight-store';
 
 const reportsDir = path.resolve(process.env.HORUS_REPORTS_DIR ?? './reports');
 const store = new TestRunStore(reportsDir);

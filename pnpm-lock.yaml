@@ -23,10 +23,10 @@ importers:
 
   example:
     dependencies:
-      '@horus/contracts':
+      '@wutangbanger/horus-contracts':
         specifier: workspace:*
         version: link:../shared/contracts
-      '@horus/insight-store':
+      '@wutangbanger/horus-insight-store':
         specifier: workspace:*
         version: link:../shared/insight-store
     devDependencies:
@@ -59,7 +59,7 @@ importers:
 
   shared/insight-store:
     dependencies:
-      '@horus/contracts':
+      '@wutangbanger/horus-contracts':
         specifier: workspace:*
         version: link:../contracts
       vitest:

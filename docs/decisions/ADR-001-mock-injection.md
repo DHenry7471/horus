@@ -17,7 +17,7 @@ Integration tests for Horus need to verify cross-service interactions between Or
 
 ## Decision
 
-We use **Option B — injected in-memory mocks** via the `@horus/test-utils` shared library.
+We use **Option B — injected in-memory mocks** via the `@wutangbanger/horus-test-utils` shared library.
 
 Production services depend on interfaces (`IEventBus`, `IRepository<T>`, `INotificationSender`), not concrete implementations. Tests inject mock implementations of those interfaces.
 
@@ -48,7 +48,7 @@ Real infrastructure testing belongs in:
 - Integration tests run in < 1s — developers get instant feedback
 - Zero flakiness from Docker networking, port conflicts, or container startup races
 - Tests clearly document the interface contracts between services
-- `@horus/test-utils` becomes a force multiplier — new services adopt the same mocks
+- `@wutangbanger/horus-test-utils` becomes a force multiplier — new services adopt the same mocks
 
 **Negative:**
 - We need to maintain the mock implementations in sync with real adapters

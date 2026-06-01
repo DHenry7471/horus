@@ -1,4 +1,4 @@
-# ADR-004: Extract `@horus/contracts` and `@horus/insight-store` as Publishable Packages
+# ADR-004: Extract `@wutangbanger/horus-contracts` and `@wutangbanger/horus-insight-store` as Publishable Packages
 
 **Status:** Proposed  
 **Date:** 2026-05-31  
@@ -8,7 +8,7 @@
 
 ## Context
 
-Horus is currently a closed monorepo reference implementation. All packages (`@horus/contracts`, `@horus/insight-store`, `@horus/test-utils`) are resolved via local path aliases in `vitest.config.ts` and `tsconfig.json`. No package has a build step, published exports, or versioning strategy.
+Horus is currently a closed monorepo reference implementation. All packages (`@wutangbanger/horus-contracts`, `@wutangbanger/horus-insight-store`, `@wutangbanger/horus-test-utils`) are resolved via local path aliases in `vitest.config.ts` and `tsconfig.json`. No package has a build step, published exports, or versioning strategy.
 
 To make Horus usable in any external project, these packages must be extractable, buildable, and installable via the npm registry.
 
@@ -16,7 +16,7 @@ To make Horus usable in any external project, these packages must be extractable
 
 ## Decision
 
-Extract `@horus/contracts` and `@horus/insight-store` as standalone publishable packages. Keep the order-service/notification-service domain code in the monorepo as a live reference implementation — it is not a deliverable.
+Extract `@wutangbanger/horus-contracts` and `@wutangbanger/horus-insight-store` as standalone publishable packages. Keep the order-service/notification-service domain code in the monorepo as a live reference implementation — it is not a deliverable.
 
 ---
 
@@ -26,7 +26,7 @@ The repo standardizes on **pnpm** in place of npm workspaces. This decision is m
 
 **Why pnpm over npm:**
 
-- `workspace:*` protocol expresses intra-monorepo deps explicitly — `@horus/example` declaring `"@horus/insight-store": "workspace:*"` makes the relationship machine-readable, not implicit
+- `workspace:*` protocol expresses intra-monorepo deps explicitly — `@wutangbanger/horus-example` declaring `"@wutangbanger/horus-insight-store": "workspace:*"` makes the relationship machine-readable, not implicit
 - Strict hoisting by default prevents phantom dependency bugs (a package accidentally importing something not in its own `package.json` because npm hoisted it to root `node_modules`)
 - Content-addressable store means `node_modules` across workspaces share disk — significant when `vitest`, `playwright`, and `typescript` would otherwise be duplicated per package
 - `pnpm publish` honors the `workspace:*` → real semver rewrite on pack, so published packages reference real npm versions, not workspace paths
@@ -84,12 +84,12 @@ auto-install-peers=true
 
 | Package | Role | Consumers |
 |---|---|---|
-| `@horus/contracts` | Pure TypeScript interfaces, zero runtime deps | `@horus/insight-store`, user production code |
-| `@horus/insight-store` | JSONL stores, post-run ingestion script, flakiness/coverage analytics | Any project's CI pipeline, regardless of test runner |
+| `@wutangbanger/horus-contracts` | Pure TypeScript interfaces, zero runtime deps | `@wutangbanger/horus-insight-store`, user production code |
+| `@wutangbanger/horus-insight-store` | JSONL stores, post-run ingestion script, flakiness/coverage analytics | Any project's CI pipeline, regardless of test runner |
 
 ### What stays internal
 
-`@horus/test-utils` — `MockEventBus`, `MockRepository`, `builders.ts` — is domain-coupled (Order, Notification). If a consuming project wants mocks, they implement `IRepository<T>` and `IEventBus` themselves. The interfaces are the contract.
+`@wutangbanger/horus-test-utils` — `MockEventBus`, `MockRepository`, `builders.ts` — is domain-coupled (Order, Notification). If a consuming project wants mocks, they implement `IRepository<T>` and `IEventBus` themselves. The interfaces are the contract.
 
 ---
 
@@ -124,7 +124,7 @@ Add `shared/insight-store/src/ingest.ts` as a CLI entry point:
  */
 
 import { TestRunStore } from './TestRunStore.js';
-import { TestRunRecord } from '@horus/contracts';
+import { TestRunRecord } from '@wutangbanger/horus-contracts';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import crypto from 'node:crypto';
@@ -187,7 +187,7 @@ Export it from `package.json` as a bin:
 
 ### HorusVitestReporter — kept as an opt-in convenience
 
-`HorusVitestReporter` remains in `@horus/insight-store` for Vitest users who prefer zero-config inline capture. It is documented as secondary to the ingestion script and carries a note that the Vitest Reporter API is subject to breaking changes between major versions.
+`HorusVitestReporter` remains in `@wutangbanger/horus-insight-store` for Vitest users who prefer zero-config inline capture. It is documented as secondary to the ingestion script and carries a note that the Vitest Reporter API is subject to breaking changes between major versions.
 
 ---
 
@@ -274,7 +274,7 @@ Extract all example-specific scripts and devDependencies from root into `example
 
 ```json
 {
-  "name": "@horus/example",
+  "name": "@wutangbanger/horus-example",
   "private": true,
   "type": "module",
   "scripts": {
@@ -296,8 +296,8 @@ Extract all example-specific scripts and devDependencies from root into `example
     "check:event-contracts:persist": "tsx agents/check-event-contracts.ts --persist"
   },
   "dependencies": {
-    "@horus/contracts":     "workspace:*",
-    "@horus/insight-store": "workspace:*"
+    "@wutangbanger/horus-contracts":     "workspace:*",
+    "@wutangbanger/horus-insight-store": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test":                "^1.44.0",
@@ -323,7 +323,7 @@ Root `package.json` shrinks to workspace orchestration only:
     "build":     "pnpm run build --filter './shared/*'",
     "typecheck": "tsc --noEmit",
     "lint":      "eslint . --ext .ts --no-eslintrc --config .eslintrc.cjs",
-    "test:all":  "pnpm run test:all --filter @horus/example"
+    "test:all":  "pnpm run test:all --filter @wutangbanger/horus-example"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
@@ -347,9 +347,9 @@ Root `package.json` shrinks to workspace orchestration only:
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "@horus/contracts":     ["../shared/contracts/src/index.ts"],
-      "@horus/test-utils":    ["../shared/test-utils/src/index.ts"],
-      "@horus/insight-store": ["../shared/insight-store/src/index.ts"]
+      "@wutangbanger/horus-contracts":     ["../shared/contracts/src/index.ts"],
+      "@wutangbanger/horus-test-utils":    ["../shared/test-utils/src/index.ts"],
+      "@wutangbanger/horus-insight-store": ["../shared/insight-store/src/index.ts"]
     }
   },
   "include": ["services/**/*", "tests/**/*", "agents/**/*", "quality-dashboard/**/*"]
@@ -378,7 +378,7 @@ Any hits need updating to `./services` / `./tests` since they're now siblings in
 
 **2.6 — Update `CLAUDE.md`**
 
-Update architecture diagram and all commands to reflect `example/` layout and pnpm. Commands now run as `pnpm run <script> --filter @horus/example` from root, or directly from `example/`.
+Update architecture diagram and all commands to reflect `example/` layout and pnpm. Commands now run as `pnpm run <script> --filter @wutangbanger/horus-example` from root, or directly from `example/`.
 
 **2.7 — Update GitHub Actions workflows**
 
@@ -430,8 +430,8 @@ git show origin/gh-pages:dashboard/history.json > example/quality-dashboard/dist
 ```bash
 pnpm install
 pnpm run build
-pnpm run test:unit --filter @horus/example
-pnpm run test:integration --filter @horus/example
+pnpm run test:unit --filter @wutangbanger/horus-example
+pnpm run test:integration --filter @wutangbanger/horus-example
 ```
 
 ---
@@ -448,7 +448,7 @@ pnpm run test:integration --filter @horus/example
 **3.2 — Define `HorusConfig`**
 
 ```ts
-// proposed shape — goes into @horus/contracts
+// proposed shape — goes into @wutangbanger/horus-contracts
 export interface HorusConfig {
   /** Directory where all JSONL report files are written. Default: './reports' */
   reportsDir: string;
@@ -468,7 +468,7 @@ All stores and the reporter accept `HorusConfig` instead of bare `reportsDir: st
 
 ---
 
-### Phase 4 — Build infrastructure for `@horus/contracts` (1 day)
+### Phase 4 — Build infrastructure for `@wutangbanger/horus-contracts` (1 day)
 
 **4.1 — Add `tsconfig.build.json`**
 
@@ -492,7 +492,7 @@ All stores and the reporter accept `HorusConfig` instead of bare `reportsDir: st
 
 ```json
 {
-  "name": "@horus/contracts",
+  "name": "@wutangbanger/horus-contracts",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -517,17 +517,17 @@ All stores and the reporter accept `HorusConfig` instead of bare `reportsDir: st
 
 ---
 
-### Phase 5 — Build infrastructure for `@horus/insight-store` (1–2 days)
+### Phase 5 — Build infrastructure for `@wutangbanger/horus-insight-store` (1–2 days)
 
 **5.1 — Add `tsconfig.build.json`**
 
-Same pattern as contracts. `@horus/contracts` resolves via the workspace symlink in dev, and from the registry for consumers.
+Same pattern as contracts. `@wutangbanger/horus-contracts` resolves via the workspace symlink in dev, and from the registry for consumers.
 
 **5.2 — Update `package.json`**
 
 ```json
 {
-  "name": "@horus/insight-store",
+  "name": "@wutangbanger/horus-insight-store",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -540,7 +540,7 @@ Same pattern as contracts. `@horus/contracts` resolves via the workspace symlink
   },
   "files": ["dist"],
   "dependencies": {
-    "@horus/contracts": "^1.0.0"
+    "@wutangbanger/horus-contracts": "^1.0.0"
   },
   "peerDependencies": {
     "vitest": ">=1.0.0 <5.0.0"
@@ -596,10 +596,10 @@ Remove `HorusVitestReporter` from `example/vitest.config.ts`. Add ingestion as e
 **6.2 — Run the full test suite and verify JSONL output**
 
 ```bash
-pnpm run test:all --filter @horus/example
+pnpm run test:all --filter @wutangbanger/horus-example
 # Confirm records landed
 cat example/reports/test-runs/unit.jsonl | head -1 | jq .
-pnpm run dashboard:generate --filter @horus/example
+pnpm run dashboard:generate --filter @wutangbanger/horus-example
 ```
 
 ---
@@ -612,7 +612,7 @@ Start both packages at `1.0.0`. They share a version bump cadence — if `contra
 
 **7.2 — Publish order**
 
-Always `@horus/contracts` first, then `@horus/insight-store`.
+Always `@wutangbanger/horus-contracts` first, then `@wutangbanger/horus-insight-store`.
 
 ```bash
 # From shared/contracts/
@@ -635,7 +635,7 @@ Update `README.md` with a "Quick Start" section. The primary path uses the inges
 **Primary path (any test runner):**
 
 ```bash
-pnpm add @horus/contracts @horus/insight-store
+pnpm add @wutangbanger/horus-contracts @wutangbanger/horus-insight-store
 ```
 
 ```yaml
@@ -650,7 +650,7 @@ pnpm add @horus/contracts @horus/insight-store
 
 ```ts
 // vitest.config.ts
-import { HorusVitestReporter } from '@horus/insight-store';
+import { HorusVitestReporter } from '@wutangbanger/horus-insight-store';
 
 export default defineConfig({
   test: {
@@ -698,15 +698,15 @@ git push origin <good-sha>:gh-pages --force
 | Vitest/Jest JSON output shape diverges from what `ingest.ts` expects | Low-Medium | Normalize both shapes in `ingest.ts` with explicit field fallbacks; add a unit test for each supported format |
 | `vitest` Reporter API (`onTestCaseResult`, `TestCase`) changes between versions | Low | Reduced risk — reporter is now secondary/opt-in. Pin peer dep range conservatively (`>=1.0.0 <5.0.0`) |
 | Consumer uses CommonJS; our packages are ESM-only | Low-Medium | Add a `"require"` condition to `exports` map pointing at a CJS build (`tsc --module commonjs`), or document ESM-only explicitly |
-| `@horus/contracts` version skew between consumer and `insight-store` | Low | `insight-store` uses `^` range on `contracts`; semver handles this cleanly as long as we don't make breaking changes to interfaces |
+| `@wutangbanger/horus-contracts` version skew between consumer and `insight-store` | Low | `insight-store` uses `^` range on `contracts`; semver handles this cleanly as long as we don't make breaking changes to interfaces |
 
 ---
 
 ## Success Criteria
 
-- [ ] Phase 1–2: `pnpm install` succeeds, `pnpm run test:all --filter @horus/example` passes, repo layout matches target structure
+- [ ] Phase 1–2: `pnpm install` succeeds, `pnpm run test:all --filter @wutangbanger/horus-example` passes, repo layout matches target structure
 - [ ] Phase 4–5: `pnpm run build` from each `shared/` package emits a clean `dist/` including `ingest.js`
 - [ ] Phase 6: `horus-ingest` writes JSONL records from Vitest JSON output; `vitest.config.ts` has no Horus-specific reporter
-- [ ] Phase 7: `pnpm add @horus/contracts @horus/insight-store` works in a fresh project; `horus-ingest` is available as a bin
-- [ ] At all times: no production package imports from `@horus/test-utils`
+- [ ] Phase 7: `pnpm add @wutangbanger/horus-contracts @wutangbanger/horus-insight-store` works in a fresh project; `horus-ingest` is available as a bin
+- [ ] At all times: no production package imports from `@wutangbanger/horus-test-utils`
 

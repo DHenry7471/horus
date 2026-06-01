@@ -1,5 +1,5 @@
 {
-  "name": "@horus/contracts",
+  "name": "@wutangbanger/horus-contracts",
   "version": "1.0.0",
   "description": "Shared interface contracts for Horus services",
   "type": "module",
@@ -12,6 +12,9 @@
     }
   },
   "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist"

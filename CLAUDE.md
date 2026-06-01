@@ -37,7 +37,7 @@ pnpm run agents:saxon       # Analyze coverage summary
 
 Test/example scripts run from the `example/` workspace. You can run them from root with:
 ```bash
-pnpm run test:unit --filter @horus/example
+pnpm run test:unit --filter @wutangbanger/horus-example
 ```
 
 Or directly from `example/`:
@@ -55,9 +55,9 @@ cd example && pnpm exec vitest run tests/unit/OrderService.test.ts
 Horus is a **pnpm workspaces monorepo** with two publishable packages (`shared/`) and a private reference implementation (`example/`):
 
 ```
-shared/contracts      (@horus/contracts)    — pure TypeScript interfaces; publishable to npm
-shared/insight-store  (@horus/insight-store) — JSONL stores + ingestion CLI; publishable to npm
-shared/test-utils     (@horus/test-utils)   — mock implementations; private, domain-coupled
+shared/contracts      (@wutangbanger/horus-contracts)    — pure TypeScript interfaces; publishable to npm
+shared/insight-store  (@wutangbanger/horus-insight-store) — JSONL stores + ingestion CLI; publishable to npm
+shared/test-utils     (@wutangbanger/horus-test-utils)   — mock implementations; private, domain-coupled
 example/
   services/order-service        — Express REST API + OrderService business logic
   services/notification-service — event-driven service; listens to order domain events
@@ -70,14 +70,14 @@ docs/                 — ADRs and strategy docs (repo-wide)
 ### Dependency rule — strictly enforced
 
 ```
-production code  →  @horus/contracts  (interfaces)
-@horus/test-utils  →  @horus/contracts  (implements interfaces)
-tests  →  @horus/test-utils + @horus/contracts
+production code  →  @wutangbanger/horus-contracts  (interfaces)
+@wutangbanger/horus-test-utils  →  @wutangbanger/horus-contracts  (implements interfaces)
+tests  →  @wutangbanger/horus-test-utils + @wutangbanger/horus-contracts
 ```
 
-Production services (`OrderService`, `NotificationService`) **never import `@horus/test-utils`**. Services accept `IRepository<T>` and `IEventBus` via constructor injection; tests supply mocks, production wires real implementations.
+Production services (`OrderService`, `NotificationService`) **never import `@wutangbanger/horus-test-utils`**. Services accept `IRepository<T>` and `IEventBus` via constructor injection; tests supply mocks, production wires real implementations.
 
-### Key interfaces (`@horus/contracts`)
+### Key interfaces (`@wutangbanger/horus-contracts`)
 
 - `IRepository<T extends { id: string }>` — CRUD over any entity
 - `IEventBus` — `publish` / `subscribe` / `unsubscribeAll`
@@ -112,9 +112,9 @@ E2E tests use a thin `OrderApiClient` class (not a full Page Object, since the s
 ### Path aliases (example/vitest.config.ts)
 
 ```
-@horus/contracts  →  ../shared/contracts/src/index.ts
-@horus/test-utils →  ../shared/test-utils/src/index.ts
-@horus/insight-store → ../shared/insight-store/src/index.ts
+@wutangbanger/horus-contracts  →  ../shared/contracts/src/index.ts
+@wutangbanger/horus-test-utils →  ../shared/test-utils/src/index.ts
+@wutangbanger/horus-insight-store → ../shared/insight-store/src/index.ts
 ```
 
 These aliases are resolved by Vitest only. The `example/tsconfig.json` uses `paths` for the TypeScript compiler.

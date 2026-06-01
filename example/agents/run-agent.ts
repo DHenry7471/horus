@@ -14,8 +14,8 @@
  */
 
 import { runAgent } from '@wutangbanger/claude-agents';
-import { AgentInsightStore } from '@horus/insight-store';
-import { AgentInsight, AgentInsightCategory, AgentInsightSeverity } from '@horus/contracts';
+import { AgentInsightStore } from '@wutangbanger/horus-insight-store';
+import { AgentInsight, AgentInsightCategory, AgentInsightSeverity } from '@wutangbanger/horus-contracts';
 import crypto from 'node:crypto';
 import path from 'node:path';
 

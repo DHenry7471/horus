@@ -13,7 +13,7 @@
  */
 
 import { TestRunStore } from './TestRunStore.js';
-import { TestRunRecord } from '@horus/contracts';
+import { TestRunRecord } from '@wutangbanger/horus-contracts';
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import crypto from 'node:crypto';

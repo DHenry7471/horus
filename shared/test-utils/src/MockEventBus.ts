@@ -2,14 +2,14 @@
  * MockEventBus
  *
  * In-memory replacement for any real message broker (Redis pub/sub, SQS, etc.).
- * Implements IEventBus from @horus/contracts — safe for injection at the
+ * Implements IEventBus from @wutangbanger/horus-contracts — safe for injection at the
  * integration test layer with zero external dependencies.
  *
  * Design: Adapter pattern — production code depends on IEventBus (contracts);
  * tests inject MockEventBus (this file) instead of the real transport.
  */
 
-import { IEventBus, EventPayload } from '@horus/contracts';
+import { IEventBus, EventPayload } from '@wutangbanger/horus-contracts';
 
 export { IEventBus, EventPayload };
 

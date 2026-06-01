@@ -36,7 +36,7 @@ We follow the classic test pyramid to maximize coverage while minimizing cost:
 **Anti-pattern we avoid:** The Ice Cream Cone — heavy E2E, light unit tests. This leads to slow, flaky, expensive CI and poor developer feedback loops.
 
 ### No External Dependencies in Integration Tests
-Integration tests in Horus use injected mocks for all external services. The `@horus/test-utils` library provides:
+Integration tests in Horus use injected mocks for all external services. The `@wutangbanger/horus-test-utils` library provides:
 - `MockEventBus` — replaces Redis pub/sub, SQS, Kafka
 - `MockRepository<T>` — replaces Postgres, MongoDB, DynamoDB
 - `MockNotificationSender` — replaces email/SMS providers
@@ -61,7 +61,7 @@ This means integration tests run in milliseconds with zero infrastructure.
 | Property       | Value                                          |
 |----------------|------------------------------------------------|
 | Scope          | Cross-service interaction via shared contracts |
-| Dependencies   | All injected mocks from `@horus/test-utils`    |
+| Dependencies   | All injected mocks from `@wutangbanger/horus-test-utils`    |
 | Speed          | < 5s for entire suite                          |
 | Written by     | SDET                                           |
 | CI gate        | Blocks merge if integration gate fails         |

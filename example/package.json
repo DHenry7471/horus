@@ -1,5 +1,5 @@
 {
-  "name": "@horus/example",
+  "name": "@wutangbanger/horus-example",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,8 +22,8 @@
     "check:event-contracts:persist": "tsx agents/check-event-contracts.ts --persist"
   },
   "dependencies": {
-    "@horus/contracts": "workspace:*",
-    "@horus/insight-store": "workspace:*"
+    "@wutangbanger/horus-contracts": "workspace:*",
+    "@wutangbanger/horus-insight-store": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",

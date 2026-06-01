@@ -1,5 +1,5 @@
 {
-  "name": "@horus/notification-service",
+  "name": "@wutangbanger/horus-notification-service",
   "version": "1.0.0",
   "description": "Horus Notification Service",
   "type": "module",

@@ -13,11 +13,11 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 ## What Horus Provides
 
-**`@horus/insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here. Includes the `horus-ingest` CLI for ingesting any test runner's JSON output.
+**`@wutangbanger/horus-insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here. Includes the `horus-ingest` CLI for ingesting any test runner's JSON output.
 
-**`@horus/contracts`** — shared interfaces (`IAgentInsightStore`, `ITestRunStore`, `IEventBus`, `IRepository`, `HorusConfig`) that keep the platform's boundaries clean and swappable.
+**`@wutangbanger/horus-contracts`** — shared interfaces (`IAgentInsightStore`, `ITestRunStore`, `IEventBus`, `IRepository`, `HorusConfig`) that keep the platform's boundaries clean and swappable.
 
-**`@horus/test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure. Private — not published to npm.
+**`@wutangbanger/horus-test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure. Private — not published to npm.
 
 **Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
 
@@ -34,7 +34,7 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 Works with Vitest, Jest, Mocha, Pytest — any runner that emits JSON output.
 
 ```bash
-pnpm add @horus/contracts @horus/insight-store
+pnpm add @wutangbanger/horus-contracts @wutangbanger/horus-insight-store
 ```
 
 ```yaml
@@ -56,7 +56,7 @@ If you prefer zero-config capture within Vitest, `HorusVitestReporter` writes re
 
 ```ts
 // vitest.config.ts
-import { HorusVitestReporter } from '@horus/insight-store';
+import { HorusVitestReporter } from '@wutangbanger/horus-insight-store';
 
 export default defineConfig({
   test: {
@@ -72,9 +72,9 @@ export default defineConfig({
 ```
 horus/
 ├── shared/                         ← Publishable packages
-│   ├── contracts/                  ← Interfaces only (@horus/contracts)
+│   ├── contracts/                  ← Interfaces only (@wutangbanger/horus-contracts)
 │   ├── test-utils/                 ← Mock implementations (private, domain-coupled)
-│   └── insight-store/              ← Observability persistence (@horus/insight-store)
+│   └── insight-store/              ← Observability persistence (@wutangbanger/horus-insight-store)
 ├── example/                        ← Reference implementation (private)
 │   ├── services/
 │   │   ├── order-service/          ← Express REST API
@@ -116,10 +116,10 @@ Pass/fail on the last run answers the wrong question. Horus tracks signals over 
 - **Event contract gaps** — statically detected before they become production incidents
 
 ### No external dependencies in integration tests
-`@horus/test-utils` provides injectable mocks for all infrastructure. The reference services never touch a real database, broker, or email provider in tests:
+`@wutangbanger/horus-test-utils` provides injectable mocks for all infrastructure. The reference services never touch a real database, broker, or email provider in tests:
 
 ```typescript
-import { MockEventBus, MockRepository, anOrder } from '@horus/test-utils';
+import { MockEventBus, MockRepository, anOrder } from '@wutangbanger/horus-test-utils';
 
 const eventBus = new MockEventBus();
 const repo = new MockRepository<Order>();
@@ -127,7 +127,7 @@ const service = new OrderService(repo, eventBus);
 ```
 
 ### Interfaces first
-Production code depends only on `@horus/contracts` interfaces. Test utilities implement those interfaces. This is what makes integration tests possible without real infrastructure — and what would let Horus be adapted to any domain by swapping the reference subjects.
+Production code depends only on `@wutangbanger/horus-contracts` interfaces. Test utilities implement those interfaces. This is what makes integration tests possible without real infrastructure — and what would let Horus be adapted to any domain by swapping the reference subjects.
 
 ### AAA + descriptive naming
 ```typescript
@@ -218,7 +218,7 @@ Tracks:
 
 ---
 
-## @horus/insight-store
+## @wutangbanger/horus-insight-store
 
 The observability persistence layer. All quality signals write here; the dashboard reads from here.
 
@@ -257,7 +257,7 @@ horus-ingest --file reports/integration-results.json --layer integration
 
 ---
 
-## @horus/test-utils
+## @wutangbanger/horus-test-utils
 
 The shared mock injection library that makes clean integration tests possible.
 

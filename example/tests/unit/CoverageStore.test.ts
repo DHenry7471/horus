@@ -13,8 +13,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { CoverageStore, computeDelta } from '@horus/insight-store';
-import { CoverageSnapshot } from '@horus/contracts';
+import { CoverageStore, computeDelta } from '@wutangbanger/horus-insight-store';
+import { CoverageSnapshot } from '@wutangbanger/horus-contracts';
 
 // ── Fixture builder ────────────────────────────────────────────────────────
 

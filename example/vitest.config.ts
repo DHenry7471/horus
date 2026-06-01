@@ -25,9 +25,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@horus/contracts': resolve(__dirname, '../shared/contracts/src/index.ts'),
-      '@horus/test-utils': resolve(__dirname, '../shared/test-utils/src/index.ts'),
-      '@horus/insight-store': resolve(__dirname, '../shared/insight-store/src/index.ts'),
+      '@wutangbanger/horus-contracts': resolve(__dirname, '../shared/contracts/src/index.ts'),
+      '@wutangbanger/horus-test-utils': resolve(__dirname, '../shared/test-utils/src/index.ts'),
+      '@wutangbanger/horus-insight-store': resolve(__dirname, '../shared/insight-store/src/index.ts'),
     },
   },
 });

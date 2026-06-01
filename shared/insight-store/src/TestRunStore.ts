@@ -10,7 +10,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { TestRunRecord, ITestRunStore, HorusConfig } from '@horus/contracts';
+import { TestRunRecord, ITestRunStore, HorusConfig } from '@wutangbanger/horus-contracts';
 
 export class TestRunStore implements ITestRunStore {
   private readonly dir: string;

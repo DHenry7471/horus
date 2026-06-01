@@ -8,7 +8,7 @@
     "build": "pnpm run build --filter './shared/*'",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts --no-eslintrc --config .eslintrc.cjs",
-    "test:all": "pnpm run test:all --filter @horus/example"
+    "test:all": "pnpm run test:all --filter @wutangbanger/horus-example"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",

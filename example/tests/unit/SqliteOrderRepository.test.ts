@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SqliteOrderRepository } from '../../services/order-service/src/SqliteOrderRepository.js';
 import { OrderStatus } from '../../services/order-service/src/types.js';
-import { anOrder } from '@horus/test-utils';
+import { anOrder } from '@wutangbanger/horus-test-utils';
 
 describe('SqliteOrderRepository', () => {
   let repo: SqliteOrderRepository;

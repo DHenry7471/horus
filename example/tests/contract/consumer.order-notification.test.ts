@@ -38,7 +38,7 @@ import {
   NotificationService,
   MockNotificationSender,
 } from '../../services/notification-service/src/NotificationService.js';
-import { MockRepository, MockEventBus } from '@horus/test-utils';
+import { MockRepository, MockEventBus } from '@wutangbanger/horus-test-utils';
 import { Notification, NotificationStatus } from '../../services/notification-service/src/types.js';
 
 // ── Pact file location ────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ import {
   NotificationService,
   MockNotificationSender,
 } from '../../services/notification-service/src/NotificationService.js';
-import { MockRepository, MockEventBus, anOrder } from '@horus/test-utils';
+import { MockRepository, MockEventBus, anOrder } from '@wutangbanger/horus-test-utils';
 import { Order, OrderStatus } from '../../services/order-service/src/types.js';
 import { Notification, NotificationStatus } from '../../services/notification-service/src/types.js';
 

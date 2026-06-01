@@ -1,5 +1,5 @@
 {
-  "name": "@horus/test-utils",
+  "name": "@wutangbanger/horus-test-utils",
   "version": "1.0.0",
   "description": "Shared mock injection library for Horus integration tests",
   "main": "src/index.ts",

@@ -13,8 +13,8 @@
  */
 
 import path from 'node:path';
-import { analyzeEventContracts } from '@horus/insight-store';
-import { AgentInsightStore } from '@horus/insight-store';
+import { analyzeEventContracts } from '@wutangbanger/horus-insight-store';
+import { AgentInsightStore } from '@wutangbanger/horus-insight-store';
 import crypto from 'node:crypto';
 
 const ROOT = path.resolve(process.cwd());

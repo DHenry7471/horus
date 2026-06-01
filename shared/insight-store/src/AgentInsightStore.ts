@@ -9,12 +9,12 @@
  *   - Each line is a valid JSON object, easy to stream or tail
  *   - Human-readable and grep-friendly
  *
- * Implements IAgentInsightStore from @horus/contracts.
+ * Implements IAgentInsightStore from @wutangbanger/horus-contracts.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { AgentInsight, IAgentInsightStore, HorusConfig } from '@horus/contracts';
+import { AgentInsight, IAgentInsightStore, HorusConfig } from '@wutangbanger/horus-contracts';
 
 export class AgentInsightStore implements IAgentInsightStore {
   private readonly dir: string;

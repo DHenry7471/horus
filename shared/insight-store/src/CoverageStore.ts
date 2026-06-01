@@ -7,7 +7,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { CoverageSnapshot, CoverageDelta, HorusConfig } from '@horus/contracts';
+import { CoverageSnapshot, CoverageDelta, HorusConfig } from '@wutangbanger/horus-contracts';
 
 const DEFAULT_THRESHOLDS = { lines: 80, functions: 80, branches: 75, statements: 80 };
 

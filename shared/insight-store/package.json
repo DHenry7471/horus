@@ -1,5 +1,5 @@
 {
-  "name": "@horus/insight-store",
+  "name": "@wutangbanger/horus-insight-store",
   "version": "1.0.0",
   "description": "JSONL-backed persistence for AI agent insights",
   "type": "module",
@@ -12,8 +12,11 @@
     }
   },
   "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@horus/contracts": "workspace:*"
+    "@wutangbanger/horus-contracts": "workspace:*"
   },
   "peerDependencies": {
     "vitest": ">=1.0.0 <5.0.0"

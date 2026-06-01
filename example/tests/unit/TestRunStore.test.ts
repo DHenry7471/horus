@@ -13,8 +13,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { TestRunStore } from '@horus/insight-store';
-import { TestRunRecord } from '@horus/contracts';
+import { TestRunStore } from '@wutangbanger/horus-insight-store';
+import { TestRunRecord } from '@wutangbanger/horus-contracts';
 
 // ── Fixture builder ────────────────────────────────────────────────────────
 

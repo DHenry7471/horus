@@ -5,7 +5,7 @@
  * for every test result. Plugs into vitest.config.ts via the `reporters` array.
  *
  * Usage in vitest.config.ts:
- *   import { HorusVitestReporter } from '@horus/insight-store';
+ *   import { HorusVitestReporter } from '@wutangbanger/horus-insight-store';
  *   reporters: ['default', new HorusVitestReporter('./reports')]
  *
  * Records land in: reports/test-runs/<layer>.jsonl
@@ -13,7 +13,7 @@
 
 import type { Reporter, TestCase } from 'vitest/node';
 import { TestRunStore } from './TestRunStore.js';
-import { TestRunRecord, HorusConfig } from '@horus/contracts';
+import { TestRunRecord, HorusConfig } from '@wutangbanger/horus-contracts';
 import crypto from 'node:crypto';
 import path from 'node:path';
 

@@ -2,12 +2,12 @@
  * NotificationService
  *
  * Listens to order domain events via IEventBus and dispatches notifications.
- * Depends on @horus/contracts for interfaces — never on @horus/test-utils.
+ * Depends on @wutangbanger/horus-contracts for interfaces — never on @wutangbanger/horus-test-utils.
  * The INotificationSender interface allows swapping real email/SMS providers
  * with mocks at the integration test layer.
  */
 
-import { IEventBus, IRepository, EventPayload } from '@horus/contracts';
+import { IEventBus, IRepository, EventPayload } from '@wutangbanger/horus-contracts';
 import { Notification, NotificationChannel, NotificationStatus } from './types.js';
 import { ORDER_EVENTS } from '../../order-service/src/OrderService.js';
 

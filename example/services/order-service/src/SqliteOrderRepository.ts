@@ -3,7 +3,7 @@
  *
  * Concrete IRepository<Order> backed by SQLite via Node's built-in node:sqlite.
  * This is the production implementation wired into server.ts. Tests use
- * MockRepository<Order> from @horus/test-utils instead — that boundary is what
+ * MockRepository<Order> from @wutangbanger/horus-test-utils instead — that boundary is what
  * makes unit and integration tests infrastructure-free.
  *
  * The schema uses a single `orders` table with the Order serialised as JSON in
@@ -17,7 +17,7 @@
 
 // @ts-expect-error — node:sqlite types are not yet in @types/node for Node 22
 import { DatabaseSync } from 'node:sqlite';
-import { IRepository } from '@horus/contracts';
+import { IRepository } from '@wutangbanger/horus-contracts';
 import { Order } from './types.js';
 
 export class SqliteOrderRepository implements IRepository<Order> {

@@ -1,11 +1,11 @@
 /**
  * MockRepository<T>
  *
- * Generic in-memory repository implementing IRepository<T> from @horus/contracts.
+ * Generic in-memory repository implementing IRepository<T> from @wutangbanger/horus-contracts.
  * Replaces any real DB adapter at the integration test layer — no DB connection needed.
  */
 
-import { IRepository } from '@horus/contracts';
+import { IRepository } from '@wutangbanger/horus-contracts';
 
 export { IRepository };
 

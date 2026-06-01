@@ -18,7 +18,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { OrderService } from '../../services/order-service/src/OrderService.js';
-import { MockRepository, MockEventBus } from '@horus/test-utils';
+import { MockRepository, MockEventBus } from '@wutangbanger/horus-test-utils';
 import { Order } from '../../services/order-service/src/types.js';
 
 // ── Load pact ─────────────────────────────────────────────────────────────

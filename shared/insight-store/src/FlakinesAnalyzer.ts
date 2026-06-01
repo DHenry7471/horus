@@ -13,7 +13,7 @@
  * unless includeHealthy is true.
  */
 
-import { TestRunRecord, FlakeScore } from '@horus/contracts';
+import { TestRunRecord, FlakeScore } from '@wutangbanger/horus-contracts';
 
 export interface FlakinessAnalyzerOptions {
   /** Include tests with flakeRate === 0 in results (default: false) */

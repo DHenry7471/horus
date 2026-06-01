@@ -15,9 +15,9 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
-      "@horus/contracts": ["./shared/contracts/src/index.ts"],
-      "@horus/test-utils": ["./shared/test-utils/src/index.ts"],
-      "@horus/insight-store": ["./shared/insight-store/src/index.ts"]
+      "@wutangbanger/horus-contracts": ["./shared/contracts/src/index.ts"],
+      "@wutangbanger/horus-test-utils": ["./shared/test-utils/src/index.ts"],
+      "@wutangbanger/horus-insight-store": ["./shared/insight-store/src/index.ts"]
     }
   },
   "include": ["shared/**/*"],

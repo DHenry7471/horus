@@ -10,8 +10,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computeFlakeScores } from '@horus/insight-store';
-import { TestRunRecord } from '@horus/contracts';
+import { computeFlakeScores } from '@wutangbanger/horus-insight-store';
+import { TestRunRecord } from '@wutangbanger/horus-contracts';
 
 // ── Fixture builder ────────────────────────────────────────────────────────
 

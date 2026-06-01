@@ -10,7 +10,7 @@
  * Those concerns belong in a production broker adapter, not here.
  */
 
-import { IEventBus, EventPayload } from '@horus/contracts';
+import { IEventBus, EventPayload } from '@wutangbanger/horus-contracts';
 import crypto from 'node:crypto';
 
 type Handler = (payload: EventPayload) => void | Promise<void>;
