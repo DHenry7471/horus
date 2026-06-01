@@ -30,6 +30,7 @@ pnpm run dashboard:serve
 # AI agents (requires ANTHROPIC_API_KEY)
 pnpm run agents:felix       # Triage latest test failures
 pnpm run agents:percy       # Review recent test-file diff
+pnpm run agents:clint       # Audit CI pipeline quality gate changes
 pnpm run agents:iris        # Enrich dashboard with insights
 pnpm run agents:greta       # Analyze flakiness report
 pnpm run agents:saxon       # Analyze coverage summary

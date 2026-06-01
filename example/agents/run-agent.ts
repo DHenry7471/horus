@@ -25,6 +25,7 @@ const AGENT_CATEGORIES: Record<string, AgentInsightCategory> = {
   iris: 'dashboard',
   greta: 'flakiness',
   saxon: 'coverage',
+  clint: 'pipeline',
 };
 
 // ── Severity extraction ───────────────────────────────────────────────────

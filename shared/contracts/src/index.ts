@@ -26,19 +26,21 @@ export interface IEventBus {
 // ── Agent Insights ────────────────────────────────────────────────────────
 
 /**
- * Categories map to the five AI agents:
+ * Categories map to the six AI agents:
  *   failure    → Felix  (triage latest test failures)
  *   diff       → Percy  (review recent test-file diffs)
  *   dashboard  → Iris   (enrich dashboard with insights)
  *   flakiness  → Greta  (analyze flakiness report)
  *   coverage   → Saxon  (analyze coverage summary)
+ *   pipeline   → Clint  (audit CI/CD quality gate changes)
  */
 export type AgentInsightCategory =
   | 'failure'
   | 'diff'
   | 'dashboard'
   | 'flakiness'
-  | 'coverage';
+  | 'coverage'
+  | 'pipeline';
 
 export type AgentInsightSeverity = 'info' | 'warning' | 'critical';
 

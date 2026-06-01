@@ -21,7 +21,7 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 **Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
 
-**AI Agent pipeline** — five Claude agents (Felix, Percy, Iris, Greta, Saxon) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
+**AI Agent pipeline** — six Claude agents (Felix, Percy, Iris, Greta, Saxon, Clint) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
 
 **Event contract analyzer** — static analysis that detects which event topics lack publish or subscribe test coverage, runnable as a CI gate.
 
@@ -101,7 +101,8 @@ horus/
     ├── ci.yml
     ├── nightly-flakiness.yml
     ├── percy-pr-review.yml
-    └── felix-triage.yml
+    ├── felix-triage.yml
+    └── clint-ci-review.yml
 ```
 
 ---
@@ -190,6 +191,9 @@ Push / PR
 PR touches example/tests/**
   └── Percy review → posts AI test-change analysis as PR comment
 
+PR touches .github/workflows/*.yml
+  └── Clint review → posts AI pipeline quality-gate analysis as PR comment
+
 CI fails on PR
   └── Felix triage → posts root-cause verdict, adds merge-block label if BLOCK
 ```
@@ -227,6 +231,7 @@ reports/
 │   ├── iris.jsonl        ← dashboard enrichment
 │   ├── greta.jsonl       ← flakiness findings
 │   ├── saxon.jsonl       ← coverage findings
+│   ├── clint.jsonl       ← CI pipeline review findings
 │   └── event-contracts.jsonl ← contract gap findings
 ├── test-runs/
 │   ├── unit.jsonl        ← per-test run history
@@ -303,6 +308,7 @@ Horus integrates with agents from the [`@wutangbanger/claude-agents`](https://ww
 |---|---|---|
 | Percy | Reviews test file changes on PRs | PR touches `example/tests/**` or `*.test.ts` |
 | Felix | Triages CI failures, issues BLOCK verdict | CI workflow fails |
+| Clint | Audits CI pipeline quality gate changes | PR touches `.github/workflows/*.yml` |
 | Iris | Enriches quality dashboard with insights | `pnpm run dashboard:generate` |
 | Greta | Analyzes flakiness reports | `pnpm run agents:greta` |
 | Saxon | Analyzes coverage summary | `pnpm run agents:saxon` |
@@ -312,6 +318,7 @@ Horus integrates with agents from the [`@wutangbanger/claude-agents`](https://ww
 ```bash
 pnpm run agents:felix    # triage latest test failures
 pnpm run agents:percy    # review recent test-file diff
+pnpm run agents:clint    # audit CI pipeline changes
 pnpm run agents:iris     # enrich the dashboard
 pnpm run agents:greta    # analyze flakiness report
 pnpm run agents:saxon    # analyze coverage
