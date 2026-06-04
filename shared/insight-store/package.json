@@ -1,7 +1,8 @@
 {
   "name": "@wutangbanger/horus-insight-store",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "JSONL-backed persistence for AI agent insights",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Horus — Test Observability Platform. A Staff SDET reference implementation.",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "build": "pnpm run build --filter './shared/*'",
