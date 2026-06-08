@@ -11,6 +11,29 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><strong>Quality Dashboard</strong></td>
+    <td><strong>Unit Tests</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/dashboard-overview.png" alt="Quality Dashboard — overall pass rate, test counts by layer, coverage summary" /></td>
+    <td><img src="docs/screenshots/unit-tests.png" alt="Unit Tests — 90 total, 89 passed, 1 failed, 99% pass rate" /></td>
+  </tr>
+  <tr>
+    <td><strong>Agent Insights</strong></td>
+    <td><strong>Trend History</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/agent-insights.png" alt="Agent Insights — persistent findings from Felix, Iris, Saxon" /></td>
+    <td><img src="docs/screenshots/trend-history.png" alt="Trend History — pass rate over last 30 CI runs" /></td>
+  </tr>
+</table>
+
+---
+
 ## What Horus Provides
 
 **`@wutangbanger/horus-insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here. Includes the `horus-ingest` CLI for ingesting any test runner's JSON output.
@@ -199,6 +222,15 @@ CI fails on PR
 ```
 
 **Nightly:** The flakiness scan runs the full suite 3× and opens a GitHub issue for any non-deterministic tests.
+
+### Agents in action — [PR #2](https://github.com/DHenry7471/horus/pull/2)
+
+[PR #2](https://github.com/DHenry7471/horus/pull/2) adds the `shipOrder` feature and shows both agents firing on the same PR:
+
+- **Percy** reviewed the test diff and posted ✅ **APPROVE** — noting the AAA pattern, GIVEN-WHEN-THEN naming, and clean mock injection across 7 new tests.
+- **Felix** triaged the CI failures and posted 🚫 **BLOCK** — identifying 3 HIGH-confidence regressions (wrong event count, notification status mismatch, lifecycle expectation off by one) and automatically applying the `merge-block` label.
+
+This is the intended workflow: Percy catches quality issues in the test *approach*, Felix catches failures in the test *results* — both writing structured findings that persist to the Agent Insights dashboard.
 
 ---
 
