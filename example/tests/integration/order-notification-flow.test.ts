@@ -161,6 +161,33 @@ describe('Order → Notification Integration', () => {
     });
   });
 
+  // ── Order shipment flow ───────────────────────────────────────────────────
+
+  describe('order shipment', () => {
+    it('given confirmed order when shipped then customer receives shipment notification with tracking number', async () => {
+      // Arrange
+      const order = anOrder().withCustomerId('customer-006').withStatus(OrderStatus.CONFIRMED).build();
+      await mockOrderRepo.save(order);
+
+      // Act
+      await orderService.shipOrder(order.id, 'TRACK-XYZ-999');
+
+      // Assert — event published
+      mockEventBus.assertPublishedCount(ORDER_EVENTS.SHIPPED, 1);
+
+      // Assert — shipment notification sent with tracking number
+      const sent = mockSender.getSent();
+      expect(sent).toHaveLength(1);
+      expect(sent[0].subject).toContain('shipped');
+      expect(sent[0].body).toContain('TRACK-XYZ-999');
+
+      // Assert — notification persisted as SENT
+      const notifications = await notificationService.getNotificationsForRecipient('customer-006');
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].status).toBe(NotificationStatus.SENT);
+    });
+  });
+
   // ── Full lifecycle ────────────────────────────────────────────────────────
 
   describe('full order lifecycle', () => {
@@ -172,19 +199,21 @@ describe('Order → Notification Integration', () => {
         items: [{ productId: 'product-003', quantity: 1 }],
       };
 
-      // Act — create → confirm
+      // Act — create → confirm → ship
       const order = await orderService.createOrder(request);
       await orderService.confirmOrder(order.id);
+      await orderService.shipOrder(order.id, 'TRACK-FULL-001');
 
-      // Assert — two notifications total
+      // Assert — three notifications total
       const allNotifications = await notificationService.getNotificationsForRecipient(customerId);
-      expect(allNotifications).toHaveLength(2);
+      expect(allNotifications).toHaveLength(3);
       expect(allNotifications.every((n) => n.status === NotificationStatus.SENT)).toBe(true);
 
       // Assert — events in correct order
       const events = mockEventBus.getPublishedEvents();
       expect(events[0].topic).toBe(ORDER_EVENTS.CREATED);
       expect(events[1].topic).toBe(ORDER_EVENTS.CONFIRMED);
+      expect(events[2].topic).toBe(ORDER_EVENTS.SHIPPED);
     });
   });
 });

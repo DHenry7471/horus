@@ -55,6 +55,9 @@ export class NotificationService {
     this.eventBus.subscribe(ORDER_EVENTS.CANCELLED, (event) =>
       this.handleOrderCancelled(event)
     );
+    this.eventBus.subscribe(ORDER_EVENTS.SHIPPED, (event) =>
+      this.handleOrderShipped(event)
+    );
   }
 
   async getNotificationsForRecipient(recipientId: string): Promise<Notification[]> {
@@ -92,6 +95,17 @@ export class NotificationService {
       channel: NotificationChannel.EMAIL,
       subject: 'Your order has been cancelled',
       body: `Order #${data.orderId} was cancelled. Reason: ${data.reason}.`,
+      correlationId: event.correlationId,
+    });
+  }
+
+  private async handleOrderShipped(event: EventPayload): Promise<void> {
+    const data = event.data as { orderId: string; customerId: string; trackingNumber: string };
+    await this.dispatch({
+      recipientId: data.customerId,
+      channel: NotificationChannel.EMAIL,
+      subject: 'Your order has shipped!',
+      body: `Order #${data.orderId} is on its way. Track it with: ${data.trackingNumber}.`,
       correlationId: event.correlationId,
     });
   }

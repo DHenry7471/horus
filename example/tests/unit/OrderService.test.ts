@@ -170,6 +170,68 @@ describe('OrderService', () => {
     });
   });
 
+  // ── shipOrder ────────────────────────────────────────────────────────────
+
+  describe('shipOrder', () => {
+    it('given CONFIRMED order when shipping then transitions to SHIPPED with tracking number', async () => {
+      // Arrange
+      const order = anOrder().withStatus(OrderStatus.CONFIRMED).build();
+      await mockRepo.save(order);
+
+      // Act
+      const result = await orderService.shipOrder(order.id, 'TRACK-001');
+
+      // Assert
+      expect(result.status).toBe(OrderStatus.SHIPPED);
+      expect(result.trackingNumber).toBe('TRACK-001');
+    });
+
+    it('given CONFIRMED order when shipping then publishes order.shipped event with tracking number', async () => {
+      // Arrange
+      const order = anOrder().withStatus(OrderStatus.CONFIRMED).build();
+      await mockRepo.save(order);
+
+      // Act
+      await orderService.shipOrder(order.id, 'TRACK-002');
+
+      // Assert
+      mockEventBus.assertPublishedCount(ORDER_EVENTS.SHIPPED, 1);
+      mockEventBus.assertPublished(ORDER_EVENTS.SHIPPED, (data) => {
+        const d = data as { trackingNumber: string };
+        return d.trackingNumber === 'TRACK-002';
+      });
+    });
+
+    it('given PENDING order when shipping then throws state transition error', async () => {
+      // Arrange
+      const order = anOrder().withStatus(OrderStatus.PENDING).build();
+      await mockRepo.save(order);
+
+      // Act & Assert
+      await expect(orderService.shipOrder(order.id, 'TRACK-003')).rejects.toThrow(
+        'Cannot ship order in status "PENDING"'
+      );
+    });
+
+    it('given empty tracking number when shipping then throws validation error', async () => {
+      // Arrange
+      const order = anOrder().withStatus(OrderStatus.CONFIRMED).build();
+      await mockRepo.save(order);
+
+      // Act & Assert
+      await expect(orderService.shipOrder(order.id, '  ')).rejects.toThrow(
+        'trackingNumber is required'
+      );
+    });
+
+    it('given non-existent orderId when shipping then throws not found error', async () => {
+      // Arrange — empty repo
+
+      // Act & Assert
+      await expect(orderService.shipOrder('ghost-id', 'TRACK-004')).rejects.toThrow('Order not found');
+    });
+  });
+
   // ── cancelOrder ──────────────────────────────────────────────────────────
 
   describe('cancelOrder', () => {

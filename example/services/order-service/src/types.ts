@@ -37,6 +37,7 @@ export interface Order {
   status: OrderStatus;
   items: OrderItem[];
   totalAmount: number;
+  trackingNumber?: string;
   createdAt: string;
   updatedAt: string;
 }
