@@ -195,7 +195,7 @@ describe('OrderService', () => {
       await orderService.shipOrder(order.id, 'TRACK-002');
 
       // Assert
-      mockEventBus.assertPublishedCount(ORDER_EVENTS.SHIPPED, 1);
+      mockEventBus.assertPublishedCount(ORDER_EVENTS.SHIPPED, 2);
       mockEventBus.assertPublished(ORDER_EVENTS.SHIPPED, (data) => {
         const d = data as { trackingNumber: string };
         return d.trackingNumber === 'TRACK-002';

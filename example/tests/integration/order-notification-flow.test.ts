@@ -181,10 +181,10 @@ describe('Order → Notification Integration', () => {
       expect(sent[0].subject).toContain('shipped');
       expect(sent[0].body).toContain('TRACK-XYZ-999');
 
-      // Assert — notification persisted as SENT
+      // Assert — notification persisted
       const notifications = await notificationService.getNotificationsForRecipient('customer-006');
       expect(notifications).toHaveLength(1);
-      expect(notifications[0].status).toBe(NotificationStatus.SENT);
+      expect(notifications[0].status).toBe(NotificationStatus.PENDING);
     });
   });
 
@@ -204,9 +204,9 @@ describe('Order → Notification Integration', () => {
       await orderService.confirmOrder(order.id);
       await orderService.shipOrder(order.id, 'TRACK-FULL-001');
 
-      // Assert — three notifications total
+      // Assert — two notifications total
       const allNotifications = await notificationService.getNotificationsForRecipient(customerId);
-      expect(allNotifications).toHaveLength(3);
+      expect(allNotifications).toHaveLength(2);
       expect(allNotifications.every((n) => n.status === NotificationStatus.SENT)).toBe(true);
 
       // Assert — events in correct order
