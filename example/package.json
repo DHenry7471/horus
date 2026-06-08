@@ -19,6 +19,12 @@
     "agents:percy": "tsx agents/run-agent.ts percy \"$(git diff HEAD~1 -- 'tests/**' '**/*.test.ts' '**/*.spec.ts' 2>/dev/null)\"",
     "agents:clint": "tsx agents/run-agent.ts clint \"$(git diff HEAD~1 -- '.github/workflows/*.yml' 2>/dev/null)\"",
     "agents:saxon": "tsx agents/run-agent.ts saxon \"$(cat reports/coverage/coverage-summary.json 2>/dev/null || echo '{}')\"",
+    "agents:ambrosine": "tsx agents/run-agent.ts ambrosine \"$(cat services/order-service/src/server.ts services/order-service/src/types.ts 2>/dev/null)\"",
+    "agents:ernie": "tsx agents/run-agent.ts ernie \"$(cat tests/e2e/*.spec.ts 2>/dev/null | head -300)\"",
+    "agents:furio": "tsx agents/run-agent.ts furio \"$(cat ../shared/contracts/src/index.ts services/order-service/src/types.ts 2>/dev/null)\"",
+    "agents:kurt": "tsx agents/run-agent.ts kurt \"$(cat reports/mutation/mutation-report.json 2>/dev/null || echo '{}')\"",
+    "agents:pat": "tsx agents/run-agent.ts pat \"$(cat tests/contract/*.ts 2>/dev/null)\"",
+    "agents:tessa": "tsx agents/run-agent.ts tessa \"$(cat reports/coverage/coverage-summary.json reports/unit-results.json reports/integration-results.json 2>/dev/null | jq -sc '.')\"",
     "check:event-contracts": "tsx agents/check-event-contracts.ts",
     "check:event-contracts:persist": "tsx agents/check-event-contracts.ts --persist"
   },

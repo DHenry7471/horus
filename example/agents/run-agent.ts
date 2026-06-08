@@ -26,6 +26,12 @@ const AGENT_CATEGORIES: Record<string, AgentInsightCategory> = {
   greta: 'flakiness',
   saxon: 'coverage',
   clint: 'pipeline',
+  ambrosine: 'api-test',
+  ernie: 'e2e',
+  furio: 'fixtures',
+  kurt: 'mutation',
+  pat: 'contract',
+  tessa: 'strategy',
 };
 
 // ── Severity extraction ───────────────────────────────────────────────────

@@ -14,7 +14,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { AgentInsight, IAgentInsightStore, HorusConfig } from '@wutangbanger/horus-contracts';
+import { AgentInsight, AgentInsightCategory, IAgentInsightStore, HorusConfig } from '@wutangbanger/horus-contracts';
 
 export class AgentInsightStore implements IAgentInsightStore {
   private readonly dir: string;
@@ -53,6 +53,11 @@ export class AgentInsightStore implements IAgentInsightStore {
     const filePath = this.filePathFor(agentId);
     if (!fs.existsSync(filePath)) return [];
     return this.readFile(filePath);
+  }
+
+  async readByCategory(category: AgentInsightCategory): Promise<AgentInsight[]> {
+    const all = await this.readAll();
+    return all.filter((insight) => insight.category === category);
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────

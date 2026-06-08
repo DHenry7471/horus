@@ -21,7 +21,7 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 **Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
 
-**AI Agent pipeline** — six Claude agents (Felix, Percy, Iris, Greta, Saxon, Clint) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
+**AI Agent pipeline** — twelve Claude agents (Felix, Percy, Iris, Greta, Saxon, Clint, Ambrosine, Ernie, Furio, Kurt, Pat, Tessa) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
 
 **Event contract analyzer** — static analysis that detects which event topics lack publish or subscribe test coverage, runnable as a CI gate.
 
@@ -232,6 +232,12 @@ reports/
 │   ├── greta.jsonl       ← flakiness findings
 │   ├── saxon.jsonl       ← coverage findings
 │   ├── clint.jsonl       ← CI pipeline review findings
+│   ├── ambrosine.jsonl   ← API test audit findings
+│   ├── ernie.jsonl       ← E2E spec gap findings
+│   ├── furio.jsonl       ← test fixture recommendations
+│   ├── kurt.jsonl        ← mutation analysis findings
+│   ├── pat.jsonl         ← contract test findings
+│   ├── tessa.jsonl       ← test strategy recommendations
 │   └── event-contracts.jsonl ← contract gap findings
 ├── test-runs/
 │   ├── unit.jsonl        ← per-test run history
@@ -312,16 +318,28 @@ Horus integrates with agents from the [`@wutangbanger/claude-agents`](https://ww
 | Iris | Enriches quality dashboard with insights | `pnpm run dashboard:generate` |
 | Greta | Analyzes flakiness reports | `pnpm run agents:greta` |
 | Saxon | Analyzes coverage summary | `pnpm run agents:saxon` |
+| Ambrosine | Audits and generates API test suites | `pnpm run agents:ambrosine` |
+| Ernie | Writes missing Playwright E2E specs | `pnpm run agents:ernie` |
+| Furio | Generates typed test fixture builders | `pnpm run agents:furio` |
+| Kurt | Interprets Stryker mutation reports | `pnpm run agents:kurt` |
+| Pat | Designs consumer-driven contract tests | `pnpm run agents:pat` |
+| Tessa | Audits coverage and produces test strategy | `pnpm run agents:tessa` |
 
 **Required:** `ANTHROPIC_API_KEY` environment variable.
 
 ```bash
-pnpm run agents:felix    # triage latest test failures
-pnpm run agents:percy    # review recent test-file diff
-pnpm run agents:clint    # audit CI pipeline changes
-pnpm run agents:iris     # enrich the dashboard
-pnpm run agents:greta    # analyze flakiness report
-pnpm run agents:saxon    # analyze coverage
+pnpm run agents:felix      # triage latest test failures
+pnpm run agents:percy      # review recent test-file diff
+pnpm run agents:clint      # audit CI pipeline changes
+pnpm run agents:iris       # enrich the dashboard
+pnpm run agents:greta      # analyze flakiness report
+pnpm run agents:saxon      # analyze coverage
+pnpm run agents:ambrosine  # audit/generate API tests from route definitions
+pnpm run agents:ernie      # write missing E2E specs
+pnpm run agents:furio      # generate test fixture builders from TypeScript types
+pnpm run agents:kurt       # interpret Stryker mutation report (requires reports/mutation/mutation-report.json)
+pnpm run agents:pat        # review/extend consumer-provider contract tests
+pnpm run agents:tessa      # full test strategy audit across all layers
 ```
 
 Agent findings are persisted as `AgentInsight` records — severity (`info` / `warning` / `critical`) is extracted from the output and the full structured result is stored alongside the summary.
