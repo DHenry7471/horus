@@ -104,34 +104,6 @@ export class OrderService {
     return updated!;
   }
 
-  async shipOrder(orderId: string, trackingNumber: string): Promise<Order> {
-    const order = await this.findOrThrow(orderId);
-
-    if (order.status !== OrderStatus.CONFIRMED) {
-      throw new ValidationError(
-        `Cannot ship order in status "${order.status}". Expected CONFIRMED.`
-      );
-    }
-
-    if (!trackingNumber?.trim()) {
-      throw new ValidationError('trackingNumber is required to ship an order');
-    }
-
-    const updated = await this.orderRepository.update(orderId, {
-      status: OrderStatus.SHIPPED,
-      trackingNumber,
-      updatedAt: new Date().toISOString(),
-    });
-
-    await this.eventBus.publish(ORDER_EVENTS.SHIPPED, {
-      orderId,
-      customerId: order.customerId,
-      trackingNumber,
-    });
-
-    return updated!;
-  }
-
   async getOrder(orderId: string): Promise<Order> {
     return this.findOrThrow(orderId);
   }
