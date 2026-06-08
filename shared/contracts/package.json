@@ -1,7 +1,7 @@
 {
   "name": "@wutangbanger/horus-contracts",
-  "version": "1.3.1",
-  "description": "Shared interface contracts for Horus services",
+  "version": "1.4.0",
+  "description": "Shared interface contracts for Horus services — infrastructure interfaces and Horus agent I/O types",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

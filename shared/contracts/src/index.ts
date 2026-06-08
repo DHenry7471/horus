@@ -228,3 +228,220 @@ export interface IRepository<T extends { id: string }> {
   update(id: string, patch: Partial<T>): Promise<T | null>;
   delete(id: string): Promise<boolean>;
 }
+
+// ── Horus Agent I/O contracts ─────────────────────────────────────────────
+//
+// These types define the structured input and output contracts for the five
+// Horus API agent variants (agents/horus/ in the claude_agents repo).
+// The caller is responsible for pre-fetching all data before invocation.
+// Each agent always returns a single JSON code block parsed into the Output type.
+
+// ── Felix — failure triage ────────────────────────────────────────────────
+
+export interface FelixInput {
+  /** Full Vitest JSON report (--reporter=json) OR Playwright JSON report object. */
+  ciReport: unknown;
+  /**
+   * Output of `git diff origin/main...HEAD --name-only` — newline-separated paths.
+   * Pass an empty string if unavailable.
+   */
+  gitDiff: string;
+  /**
+   * Optional map of test name → historical pass rate (0–100).
+   * Use FlakinessAnalyzer / TestRunStore to compute this before calling the agent.
+   */
+  flakinessHistory?: Record<string, number>;
+  branch?: string;
+  runId?: string;
+}
+
+export type FailureClassification = 'REGRESSION' | 'FLAKY' | 'ENV_NOISE' | 'TEST_BUG' | 'UNKNOWN';
+export type MergeRecommendation = 'BLOCK' | 'ALLOW';
+
+export interface FelixOutput {
+  branch: string;
+  runId: string;
+  totalFailures: number;
+  failures: Array<{
+    testName: string;
+    filePath: string;
+    classification: FailureClassification;
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+    rootCauseHypothesis: string;
+    evidence: string;
+    recommendedOwner: string;
+    suggestedAction: string;
+  }>;
+  mergeRecommendation: MergeRecommendation;
+  mergeReason: string;
+  quarantineStubs: Array<{ testName: string; stub: string }>;
+}
+
+// ── Greta — coverage gap analyst ─────────────────────────────────────────
+
+export interface GretaInput {
+  /** Istanbul coverage-summary.json OR V8 JSON coverage report (parsed object). */
+  coverageReport: unknown;
+  /** Optional: one-sentence description per file path. */
+  sourceSummaries?: Record<string, string>;
+  /** Optional: path substrings treated as high-risk (elevated one risk level). */
+  highRiskModules?: string[];
+}
+
+export type CoverageRiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type CoverageGapType =
+  | 'error_path'
+  | 'state_transition'
+  | 'validation_branch'
+  | 'business_logic'
+  | 'auth_check'
+  | 'other';
+
+export interface GretaOutput {
+  overallCoverage: {
+    linesPct: number;
+    branchesPct: number;
+    functionsPct: number;
+    statementsPct: number;
+  };
+  gaps: Array<{
+    filePath: string;
+    riskLevel: CoverageRiskLevel;
+    gapType: CoverageGapType;
+    description: string;
+    uncoveredLines: number[];
+    branchCoveragePct: number;
+    testStub: string;
+  }>;
+  summary: string;
+  investmentOrder: string[];
+}
+
+// ── Iris — quality health reporter ───────────────────────────────────────
+
+export interface IrisInput {
+  runs: Array<{
+    runId: string;
+    timestamp: string;
+    branch: string;
+    passed: number;
+    failed: number;
+    skipped: number;
+    durationMs: number;
+    coverageLines?: number;
+    coverageBranches?: number;
+    unitCount?: number;
+    integrationCount?: number;
+    e2eCount?: number;
+  }>;
+  windowDays?: number;
+  thresholds?: {
+    minPassRate?: number;
+    minLineCoverage?: number;
+    maxE2ePct?: number;
+  };
+}
+
+export type QualityTrend = 'IMPROVING' | 'STABLE' | 'DEGRADING';
+
+export interface IrisOutput {
+  generatedAt: string;
+  windowDays: number;
+  passRate: { current: number; avg7d: number; avg30d: number; trend: QualityTrend };
+  coverage: { lines: number; branches: number; linesDelta7d: number; branchesDelta7d: number; trend: QualityTrend };
+  pyramid: { unitPct: number; integrationPct: number; e2ePct: number; status: 'BALANCED' | 'IMBALANCED' | 'UNKNOWN' };
+  anomalies: Array<{
+    type: 'SUDDEN_DROP' | 'DURATION_SPIKE' | 'CONSECUTIVE_FAILURES' | 'COVERAGE_DRIFT' | 'PYRAMID_IMBALANCE';
+    detail: string;
+    severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  }>;
+  topInsight: string;
+  actionItems: string[];
+  slackSummary: string;
+  htmlSnippet: string;
+}
+
+// ── Percy — PR test reviewer ──────────────────────────────────────────────
+
+export type PercyVerdict = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+
+export type PercyStandard =
+  | 'AAA_PATTERN'
+  | 'GIVEN_WHEN_THEN_NAMING'
+  | 'PYRAMID_LAYER_COMPLIANCE'
+  | 'MOCK_INJECTION'
+  | 'TEST_ISOLATION'
+  | 'NO_LOGIC_IN_TESTS'
+  | 'NO_HARDCODED_WAITS'
+  | 'BEHAVIOR_NOT_IMPLEMENTATION'
+  | 'ASSERTION_COMPLETENESS'
+  | 'TEST_COUNT_REGRESSION';
+
+export interface PercyInput {
+  /** Unified diff string from `git diff` or GitHub Compare API. */
+  diff: string;
+  prUrl?: string;
+  prTitle?: string;
+}
+
+export interface PercyOutput {
+  prUrl: string;
+  prTitle: string;
+  overallVerdict: PercyVerdict;
+  mustFix: Array<{ file: string; line: number; standard: PercyStandard; comment: string }>;
+  recommended: Array<{ file: string; line: number; standard: PercyStandard; comment: string }>;
+  summary: string;
+  standardsChecked: PercyStandard[];
+}
+
+// ── Kurt — mutation analyst ───────────────────────────────────────────────
+
+export interface KurtInput {
+  strykerReport: {
+    schemaVersion: string;
+    thresholds: { high: number; low: number; break?: number };
+    projectRoot: string;
+    files: Record<string, {
+      language: string;
+      source: string;
+      mutants: Array<{
+        id: string;
+        mutatorName: string;
+        replacement: string;
+        location: { start: { line: number; column: number }; end: { line: number; column: number } };
+        status: 'Survived' | 'Killed' | 'NoCoverage' | 'Ignored' | 'Timeout' | 'CompileError';
+        statusReason?: string;
+        coveredBy?: string[];
+        killedBy?: string[];
+        static?: boolean;
+      }>;
+    }>;
+  };
+  highRiskModules?: string[];
+}
+
+export type KurtRiskLevel = 'CRITICAL' | 'HIGH' | 'LOW';
+
+export interface KurtOutput {
+  mutationScore: number;
+  projectedScoreAfterKills: number;
+  totalSurvivors: number;
+  kills: Array<{
+    mutantId: string;
+    filePath: string;
+    line: number;
+    mutatorName: string;
+    replacement: string;
+    riskLevel: KurtRiskLevel;
+    rationale: string;
+    testStub: string;
+  }>;
+  acceptableSurvivors: Array<{
+    mutantId: string;
+    filePath: string;
+    line: number;
+    mutatorName: string;
+    rationale: string;
+  }>;
+  summary: string;
+}

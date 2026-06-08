@@ -1,5 +1,5 @@
 export { AgentInsightStore } from './AgentInsightStore.js';
-export { runAgent } from '@wutangbanger/claude-agents';
+export { runAgent, runHorusAgent } from '@wutangbanger/claude-agents';
 export { TestRunStore } from './TestRunStore.js';
 export { HorusVitestReporter } from './HorusVitestReporter.js';
 export { computeFlakeScores } from './FlakinesAnalyzer.js';

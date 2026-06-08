@@ -2,6 +2,8 @@
  * Unit Tests: AgentInsightStore
  *
  * Scope: JSONL persistence — append, read, filter.
+ * Covers both standard agent insights (freeform details) and
+ * Horus agent insights (typed structured details from FelixOutput, PercyOutput, etc.).
  * Dependencies: Node fs (real), temp directory per test.
  * External services: NONE.
  *
@@ -14,10 +16,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { AgentInsightStore } from '@wutangbanger/horus-insight-store';
-import { AgentInsight } from '@wutangbanger/horus-contracts';
+import type {
+  AgentInsight,
+  FelixOutput,
+  PercyOutput,
+} from '@wutangbanger/horus-contracts';
 
-// ── Fixture builder ────────────────────────────────────────────────────────
+// ── Fixture builders ───────────────────────────────────────────────────────
 
+/** Standard agent insight — freeform prose output. */
 function anInsight(overrides: Partial<AgentInsight> = {}): AgentInsight {
   return {
     id: crypto.randomUUID(),
@@ -27,6 +34,74 @@ function anInsight(overrides: Partial<AgentInsight> = {}): AgentInsight {
     severity: 'info',
     summary: 'All tests passed',
     details: { output: 'ok' },
+    ...overrides,
+  };
+}
+
+/**
+ * Horus agent insight — structured typed output stored directly in `details`.
+ * Mirrors what run-horus-agent.ts persists after calling runHorusAgent<T>().
+ */
+function aHorusFelixInsight(overrides: Partial<AgentInsight> = {}): AgentInsight {
+  const details: FelixOutput = {
+    branch: 'feat/payment-refactor',
+    runId: 'ci-run-42',
+    totalFailures: 1,
+    failures: [
+      {
+        testName: 'given valid order when payment fails then throws PaymentError',
+        filePath: 'tests/unit/OrderService.test.ts',
+        classification: 'REGRESSION',
+        confidence: 'HIGH',
+        rootCauseHypothesis: 'PaymentService.charge() error path not handled in new refactor',
+        evidence: 'src/payments/chargeService.ts is in the git diff',
+        recommendedOwner: 'payments-team',
+        suggestedAction: 'Block merge — fix error handling in chargeService',
+      },
+    ],
+    mergeRecommendation: 'BLOCK',
+    mergeReason: 'One REGRESSION failure with HIGH confidence linked to the diff',
+    quarantineStubs: [],
+  };
+
+  return {
+    id: crypto.randomUUID(),
+    agentId: 'horus-felix-failure-triage',
+    runAt: new Date().toISOString(),
+    category: 'failure',
+    severity: 'critical',
+    summary: 'BLOCK: One REGRESSION failure with HIGH confidence linked to the diff',
+    details,
+    ...overrides,
+  };
+}
+
+function aHorusPercyInsight(overrides: Partial<AgentInsight> = {}): AgentInsight {
+  const details: PercyOutput = {
+    prUrl: 'https://github.com/org/repo/pull/42',
+    prTitle: 'feat: refactor payment flow',
+    overallVerdict: 'REQUEST_CHANGES',
+    mustFix: [
+      {
+        file: 'tests/unit/OrderService.test.ts',
+        line: 34,
+        standard: 'AAA_PATTERN',
+        comment: 'Missing // Arrange, // Act, // Assert comments — restructure the test body.',
+      },
+    ],
+    recommended: [],
+    summary: 'One must-fix violation: AAA_PATTERN missing on OrderService test.',
+    standardsChecked: ['AAA_PATTERN', 'GIVEN_WHEN_THEN_NAMING', 'TEST_ISOLATION'],
+  };
+
+  return {
+    id: crypto.randomUUID(),
+    agentId: 'horus-percy-pr-reviewer',
+    runAt: new Date().toISOString(),
+    category: 'diff',
+    severity: 'critical',
+    summary: 'REQUEST_CHANGES: One must-fix violation: AAA_PATTERN missing.',
+    details,
     ...overrides,
   };
 }
@@ -171,6 +246,108 @@ describe('AgentInsightStore', () => {
 
       // Assert
       expect(results).toEqual([]);
+    });
+  });
+
+  // ── Horus agent insights — typed structured details ───────────────────────
+  //
+  // Horus agents store typed JSON output (FelixOutput, PercyOutput, etc.)
+  // directly in `details` rather than wrapping prose in { output: string }.
+  // These tests verify that structured payloads round-trip through JSONL intact.
+
+  describe('horus agent insights', () => {
+    it('given a horus-felix insight when appended then typed details are preserved verbatim', async () => {
+      // Arrange
+      const insight = aHorusFelixInsight();
+
+      // Act
+      await store.append(insight);
+
+      // Assert
+      const [result] = await store.readByAgent('horus-felix-failure-triage');
+      expect(result.agentId).toBe('horus-felix-failure-triage');
+      expect(result.severity).toBe('critical');
+      // Typed FelixOutput fields must survive the JSONL round-trip
+      const details = result.details as import('@wutangbanger/horus-contracts').FelixOutput;
+      expect(details.mergeRecommendation).toBe('BLOCK');
+      expect(details.failures).toHaveLength(1);
+      expect(details.failures[0].classification).toBe('REGRESSION');
+      expect(details.failures[0].confidence).toBe('HIGH');
+    });
+
+    it('given a horus-percy insight when appended then typed verdict and violations are preserved', async () => {
+      // Arrange
+      const insight = aHorusPercyInsight();
+
+      // Act
+      await store.append(insight);
+
+      // Assert
+      const [result] = await store.readByAgent('horus-percy-pr-reviewer');
+      const details = result.details as import('@wutangbanger/horus-contracts').PercyOutput;
+      expect(details.overallVerdict).toBe('REQUEST_CHANGES');
+      expect(details.mustFix).toHaveLength(1);
+      expect(details.mustFix[0].standard).toBe('AAA_PATTERN');
+    });
+
+    it('given horus and standard agent insights when querying by category then each category is isolated', async () => {
+      // Arrange — standard felix (category: failure) + horus-felix (category: failure) + horus-percy (category: diff)
+      await store.append(anInsight({ agentId: 'felix', category: 'failure' }));
+      await store.append(aHorusFelixInsight());
+      await store.append(aHorusPercyInsight());
+
+      // Act
+      const failures = await store.readByCategory('failure');
+      const diffs = await store.readByCategory('diff');
+
+      // Assert
+      expect(failures).toHaveLength(2);
+      expect(diffs).toHaveLength(1);
+      expect(diffs[0].agentId).toBe('horus-percy-pr-reviewer');
+    });
+
+    it('given mixed standard and horus insights when reading all then all are returned together', async () => {
+      // Arrange
+      await store.append(anInsight({ agentId: 'felix' }));
+      await store.append(aHorusFelixInsight());
+      await store.append(aHorusPercyInsight());
+
+      // Act
+      const all = await store.readAll();
+
+      // Assert
+      expect(all).toHaveLength(3);
+      const agentIds = all.map((r) => r.agentId);
+      expect(agentIds).toContain('felix');
+      expect(agentIds).toContain('horus-felix-failure-triage');
+      expect(agentIds).toContain('horus-percy-pr-reviewer');
+    });
+
+    it('given a horus insight with ALLOW verdict when severity is info', async () => {
+      // Arrange — ALLOW verdict should produce an info-severity insight
+      const insight = aHorusFelixInsight({
+        severity: 'info',
+        summary: 'ALLOW: No regressions detected',
+        details: {
+          branch: 'feat/safe-refactor',
+          runId: 'ci-run-99',
+          totalFailures: 0,
+          failures: [],
+          mergeRecommendation: 'ALLOW',
+          mergeReason: 'No failures linked to the diff',
+          quarantineStubs: [],
+        } satisfies import('@wutangbanger/horus-contracts').FelixOutput,
+      });
+
+      // Act
+      await store.append(insight);
+
+      // Assert
+      const [result] = await store.readByAgent('horus-felix-failure-triage');
+      expect(result.severity).toBe('info');
+      const details = result.details as import('@wutangbanger/horus-contracts').FelixOutput;
+      expect(details.mergeRecommendation).toBe('ALLOW');
+      expect(details.totalFailures).toBe(0);
     });
   });
 });

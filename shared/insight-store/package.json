@@ -1,6 +1,6 @@
 {
   "name": "@wutangbanger/horus-insight-store",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "JSONL-backed persistence for AI agent insights",
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@wutangbanger/horus-contracts": "workspace:*",
-    "@wutangbanger/claude-agents": "^3.1.1"
+    "@wutangbanger/claude-agents": "^3.2.0"
   },
   "peerDependencies": {
     "vitest": ">=1.0.0 <5.0.0"

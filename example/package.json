@@ -25,10 +25,16 @@
     "agents:kurt": "tsx agents/run-agent.ts kurt \"$(cat reports/mutation/mutation-report.json 2>/dev/null || echo '{}')\"",
     "agents:pat": "tsx agents/run-agent.ts pat \"$(cat tests/contract/*.ts 2>/dev/null)\"",
     "agents:tessa": "tsx agents/run-agent.ts tessa \"$(cat reports/coverage/coverage-summary.json reports/unit-results.json reports/integration-results.json 2>/dev/null | jq -sc '.')\"",
+    "agents:horus-felix": "tsx agents/build-horus-inputs.ts felix > /tmp/horus-felix-input.json && tsx agents/run-horus-agent.ts horus-felix --input-file /tmp/horus-felix-input.json",
+    "agents:horus-greta": "tsx agents/build-horus-inputs.ts greta > /tmp/horus-greta-input.json && tsx agents/run-horus-agent.ts horus-greta --input-file /tmp/horus-greta-input.json",
+    "agents:horus-iris": "pnpm run ingest && tsx agents/build-horus-inputs.ts iris > /tmp/horus-iris-input.json && tsx agents/run-horus-agent.ts horus-iris --input-file /tmp/horus-iris-input.json",
+    "agents:horus-percy": "tsx agents/build-horus-inputs.ts percy > /tmp/horus-percy-input.json && tsx agents/run-horus-agent.ts horus-percy --input-file /tmp/horus-percy-input.json",
+    "agents:horus-kurt": "tsx agents/build-horus-inputs.ts kurt > /tmp/horus-kurt-input.json && tsx agents/run-horus-agent.ts horus-kurt --input-file /tmp/horus-kurt-input.json",
     "check:event-contracts": "tsx agents/check-event-contracts.ts",
     "check:event-contracts:persist": "tsx agents/check-event-contracts.ts --persist"
   },
   "dependencies": {
+    "-": "^0.0.1",
     "@wutangbanger/horus-contracts": "workspace:*",
     "@wutangbanger/horus-insight-store": "workspace:*"
   },

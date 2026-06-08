@@ -60,63 +60,80 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Build report payload
-        id: payload
+      - name: Build Felix input (FelixInput contract)
+        id: input
         working-directory: example
         run: |
           UNIT=$(cat reports/unit-results.json 2>/dev/null || echo 'null')
           INTG=$(cat reports/integration-results.json 2>/dev/null || echo 'null')
           E2E=$(cat reports/e2e-results.json 2>/dev/null || echo 'null')
-          PAYLOAD=$(jq -n \
-            --argjson unit "$UNIT" \
-            --argjson integration "$INTG" \
-            --argjson e2e "$E2E" \
-            '{unit: $unit, integration: $integration, e2e: $e2e}')
-          echo "payload<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$PAYLOAD" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          # git diff --name-only gives felix the file-level correlation signal
+          DIFF=$(git diff origin/${{ github.event.workflow_run.head_branch }}...HEAD --name-only 2>/dev/null || echo '')
+          INPUT=$(jq -n \
+            --argjson ciReport "{\"unit\":$UNIT,\"integration\":$INTG,\"e2e\":$E2E}" \
+            --arg gitDiff "$DIFF" \
+            --arg branch "${{ github.event.workflow_run.head_branch }}" \
+            --arg runId "${{ github.event.workflow_run.id }}" \
+            '{ciReport: $ciReport, gitDiff: $gitDiff, branch: $branch, runId: $runId}')
+          echo "$INPUT" > /tmp/felix-input.json
+          echo "input_file=/tmp/felix-input.json" >> "$GITHUB_OUTPUT"
 
-      - name: Run Felix agent
+      - name: Run horus-felix agent
         id: felix
         working-directory: example
         run: |
-          OUTPUT=$(pnpm exec tsx agents/run-agent.ts felix "$FELIX_PAYLOAD")
+          # Output is structured JSON (FelixOutput) — no text parsing required
+          OUTPUT=$(pnpm exec tsx agents/run-horus-agent.ts horus-felix --input-file ${{ steps.input.outputs.input_file }})
           echo "output<<EOF" >> "$GITHUB_OUTPUT"
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          FELIX_PAYLOAD: ${{ steps.payload.outputs.payload }}
+          HORUS_REPORTS_DIR: ./reports
 
-      - name: Detect BLOCK verdict
+      - name: Extract verdict from structured output
         id: verdict
         run: |
-          if echo "${{ steps.felix.outputs.output }}" | grep -qi '\bBLOCK\b'; then
-            echo "block=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "block=false" >> "$GITHUB_OUTPUT"
-          fi
+          # mergeRecommendation is a first-class field — no grep required
+          RECOMMENDATION=$(echo '${{ steps.felix.outputs.output }}' | jq -r '.mergeRecommendation')
+          echo "block=$([ "$RECOMMENDATION" = "BLOCK" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "recommendation=$RECOMMENDATION" >> "$GITHUB_OUTPUT"
 
       - name: Post Felix triage as PR comment
         uses: actions/github-script@v7
         with:
           script: |
-            const output = `${{ steps.felix.outputs.output }}`;
-            const isBlock = '${{ steps.verdict.outputs.block }}' === 'true';
-            const verdict = isBlock ? '🚫 **BLOCK**' : '✅ **PASS**';
+            const raw = `${{ steps.felix.outputs.output }}`;
+            const result = JSON.parse(raw);
+            const isBlock = result.mergeRecommendation === 'BLOCK';
+            const verdict = isBlock ? '🚫 **BLOCK**' : '✅ **ALLOW**';
+
+            // Build a structured comment from typed FelixOutput fields
+            const failureLines = result.failures.map(f =>
+              `| \`${f.testName}\` | ${f.classification} | ${f.confidence} | ${f.suggestedAction} |`
+            );
+
+            const failureTable = result.failures.length > 0
+              ? [
+                  '| Test | Class | Confidence | Action |',
+                  '|------|-------|------------|--------|',
+                  ...failureLines,
+                ].join('\n')
+              : '_No failures recorded._';
 
             const body = [
               `## 🔬 Felix — Test Failure Triage`,
               '',
               `**Verdict:** ${verdict}`,
+              `**Reason:** ${result.mergeReason}`,
+              `**Total failures:** ${result.totalFailures}`,
               '',
-              output,
+              failureTable,
               '',
               '---',
-              `*Triggered by failed run [${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`,
+              `*horus-felix · run [${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`,
             ].join('\n');
 
-            // Find the PR associated with this workflow run
             const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -130,8 +147,6 @@ jobs:
             }
 
             const pr = prs[0];
-
-            // Upsert comment
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -158,8 +173,7 @@ jobs:
               });
             }
 
-            // Add merge-block label if felix says BLOCK
-            if ('${{ steps.verdict.outputs.block }}' === 'true') {
+            if (isBlock) {
               try {
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
@@ -168,6 +182,6 @@ jobs:
                   labels: ['merge-block'],
                 });
               } catch (e) {
-                console.warn('Could not add merge-block label (may not exist yet):', e.message);
+                console.warn('Could not add merge-block label:', e.message);
               }
             }
