@@ -42,6 +42,7 @@ jobs:
 
       - name: Run Clint agent
         id: clint
+        continue-on-error: true
         working-directory: example
         run: |
           OUTPUT=$(pnpm exec tsx agents/run-agent.ts clint "$CLINT_DIFF")
@@ -53,6 +54,7 @@ jobs:
           CLINT_DIFF: ${{ steps.diff.outputs.diff }}
 
       - name: Post Clint review as PR comment
+        if: always()
         uses: actions/github-script@v7
         env:
           CLINT_OUTPUT: ${{ steps.clint.outputs.output }}
