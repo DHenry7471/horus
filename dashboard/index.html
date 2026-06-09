@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horus — Quality Observatory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <style>
+    :root {
+      --bg:          #09090b;
+      --surface:     #111113;
+      --surface-2:   #18181b;
+      --border:      #27272a;
+      --text:        #e4e4e7;
+      --muted:       #71717a;
+      --pass:        #22c55e;
+      --fail:        #ef4444;
+      --warn:        #f59e0b;
+      --accent:      #f97316;
+      --accent-dim:  rgba(249,115,22,0.12);
+      --unit:        #3b82f6;
+      --integ:       #a855f7;
+      --e2e:         #f97316;
+      --font-mono:   'Space Mono', monospace;
+      --font-sans:   'DM Sans', sans-serif;
+      --radius:      6px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Grid layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 56px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-eye {
+      width: 28px;
+      height: 28px;
+    }
+
+    .logo-name {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .topbar-meta {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .meta-item {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .meta-item span { color: var(--text); }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .status-pill.pass { background: rgba(34,197,94,0.12); color: var(--pass); border: 1px solid rgba(34,197,94,0.25); }
+    .status-pill.fail { background: rgba(239,68,68,0.12); color: var(--fail); border: 1px solid rgba(239,68,68,0.25); }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status-dot.pulse { animation: pulse 2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 24px 0;
+    }
+
+    .nav-section {
+      padding: 0 16px;
+      margin-bottom: 24px;
+    }
+
+    .nav-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding: 0 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: rgba(249,115,22,0.2);
+    }
+
+    .nav-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Main content ── */
+    .main {
+      padding: 28px 32px;
+      overflow-y: auto;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+
+    /* ── Hero metric ── */
+    .hero-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .metric-card.accent::before { background: var(--accent); }
+    .metric-card.pass::before   { background: var(--pass); }
+    .metric-card.unit::before   { background: var(--unit); }
+    .metric-card.integ::before  { background: var(--integ); }
+    .metric-card.e2e::before    { background: var(--e2e); }
+    .metric-card.warn::before   { background: var(--warn); }
+
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .metric-value.pass { color: var(--pass); }
+    .metric-value.fail { color: var(--fail); }
+    .metric-value.warn { color: var(--warn); }
+    .metric-value.accent { color: var(--accent); }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Layer breakdown ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .card-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .layer-badge {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ── Progress bars ── */
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .bar-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      width: 90px;
+      flex-shrink: 0;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .bar-pct {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Trend chart (SVG) ── */
+    .chart-wrap {
+      width: 100%;
+      height: 180px;
+      position: relative;
+    }
+
+    .chart-wrap svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .test-table th {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 0 12px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .test-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    .test-table tr:last-child td { border-bottom: none; }
+    .test-table tr:hover td { background: var(--surface-2); }
+
+    .test-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text);
+    }
+
+    .test-file {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .badge.pass { background: rgba(34,197,94,0.12); color: var(--pass); }
+    .badge.fail { background: rgba(239,68,68,0.12); color: var(--fail); }
+    .badge.unit { background: rgba(59,130,246,0.12); color: var(--unit); }
+    .badge.integ { background: rgba(168,85,247,0.12); color: var(--integ); }
+    .badge.e2e { background: rgba(249,115,22,0.12); color: var(--e2e); }
+
+    /* ── Pyramid viz ── */
+    .pyramid-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 16px 0;
+    }
+
+    .pyramid-layer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: white;
+      transition: all 0.3s;
+      cursor: default;
+    }
+
+    .pyramid-layer:hover { filter: brightness(1.15); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up {
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .fade-up:nth-child(1) { animation-delay: 0.05s; }
+    .fade-up:nth-child(2) { animation-delay: 0.10s; }
+    .fade-up:nth-child(3) { animation-delay: 0.15s; }
+    .fade-up:nth-child(4) { animation-delay: 0.20s; }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* ── Pyramid warning badge on nav ── */
+    .nav-warn {
+      margin-left: auto;
+      background: rgba(245,158,11,0.15);
+      color: var(--warn);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* ── Test table filter ── */
+    .test-filter {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 12px;
+      color: var(--text);
+      font-size: 12px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .test-filter:focus { border-color: var(--accent); }
+    .test-filter::placeholder { color: var(--muted); }
+
+    /* ── Markdown prose in insights ── */
+    .md-prose h1,.md-prose h2,.md-prose h3 { font-size: 13px; font-weight: 700; margin: 10px 0 4px; color: var(--text); }
+    .md-prose p  { margin: 4px 0; color: var(--text); font-size: 13px; line-height: 1.6; }
+    .md-prose ul,.md-prose ol { padding-left: 18px; margin: 4px 0; }
+    .md-prose li { font-size: 12px; color: var(--muted); margin: 2px 0; }
+    .md-prose strong { color: var(--text); }
+    .md-prose code { font-family: var(--font-mono); font-size: 11px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <div class="logo">
+      <svg class="logo-eye" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="14" cy="14" rx="13" ry="8" stroke="#f97316" stroke-width="1.5"/>
+        <circle cx="14" cy="14" r="4" fill="#f97316"/>
+        <circle cx="14" cy="14" r="2" fill="#09090b"/>
+        <line x1="14" y1="2" x2="14" y2="6" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="22" x2="14" y2="26" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="logo-name">HORUS</div>
+        <div class="logo-sub">Quality Observatory</div>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <div class="meta-item">Build <span id="build-num">—</span></div>
+      <div class="meta-item">SHA <span id="commit-sha">—</span></div>
+      <div class="meta-item">Generated <span id="generated-at">—</span></div>
+      <div class="status-pill pass" id="overall-status">
+        <div class="status-dot pulse"></div>
+        <span>PASSING</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="showPage('dashboard', this)">
+        <div class="nav-dot" style="background:var(--accent)"></div>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('pyramid', this)">
+        <div class="nav-dot" style="background:var(--unit)"></div>
+        Test Pyramid
+      </div>
+      <div class="nav-item" onclick="showPage('coverage', this)">
+        <div class="nav-dot" style="background:var(--pass)"></div>
+        Coverage
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Layers</div>
+      <div class="nav-item" onclick="showPage('unit', this)">
+        <div class="nav-dot" style="background:var(--unit)"></div>
+        Unit Tests
+      </div>
+      <div class="nav-item" onclick="showPage('integration', this)">
+        <div class="nav-dot" style="background:var(--integ)"></div>
+        Integration Tests
+      </div>
+      <div class="nav-item" onclick="showPage('e2e', this)">
+        <div class="nav-dot" style="background:var(--e2e)"></div>
+        E2E Tests
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Health</div>
+      <div class="nav-item" onclick="showPage('flakiness', this)">
+        <div class="nav-dot" style="background:var(--warn)"></div>
+        Flakiness
+      </div>
+      <div class="nav-item" onclick="showPage('trends', this)">
+        <div class="nav-dot" style="background:var(--muted)"></div>
+        Trend History
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Contracts</div>
+      <div class="nav-item" onclick="showPage('event-contracts', this)">
+        <div class="nav-dot" style="background:var(--integ)"></div>
+        Event Contracts
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">AI Agents</div>
+      <div class="nav-item" onclick="showPage('insights', this)">
+        <div class="nav-dot" style="background:var(--accent)"></div>
+        Agent Insights
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- Dashboard page -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">Quality Dashboard</div>
+      <div class="page-subtitle">Real-time view of test health across all layers</div>
+
+      <div class="hero-row">
+        <div class="metric-card accent fade-up">
+          <div class="metric-label">Overall Pass Rate</div>
+          <div class="metric-value accent" id="pass-rate">—</div>
+          <div class="metric-sub" id="pass-rate-sub">Loading...</div>
+        </div>
+        <div class="metric-card pass fade-up">
+          <div class="metric-label">Total Tests</div>
+          <div class="metric-value" id="total-tests">—</div>
+          <div class="metric-sub">across all layers</div>
+        </div>
+        <div class="metric-card unit fade-up">
+          <div class="metric-label">Unit Tests</div>
+          <div class="metric-value" style="color:var(--unit)" id="unit-count">—</div>
+          <div class="metric-sub" id="unit-sub">—</div>
+        </div>
+        <div class="metric-card integ fade-up">
+          <div class="metric-label">Integration Tests</div>
+          <div class="metric-value" style="color:var(--integ)" id="integ-count">—</div>
+          <div class="metric-sub" id="integ-sub">—</div>
+        </div>
+        <div class="metric-card e2e fade-up">
+          <div class="metric-label">E2E Tests</div>
+          <div class="metric-value" style="color:var(--e2e)" id="e2e-count">—</div>
+          <div class="metric-sub" id="e2e-sub">—</div>
+        </div>
+      </div>
+
+      <div id="pyramid-warning" style="display:none;margin-bottom:16px;">
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;gap:10px;">
+          <span style="color:var(--warn);font-size:15px;">⚠</span>
+          <span style="color:var(--warn);font-size:13px;">Test pyramid skewed — unit tests are under 60% of the suite. <span style="color:var(--muted);">See <strong style="color:var(--warn);cursor:pointer;" onclick="showPage('pyramid',document.querySelector('[onclick*=pyramid]'))">Pyramid</strong> for details.</span></span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Pass Rate by Layer</div>
+          <div id="layer-bars">
+            <div class="bar-row">
+              <div class="bar-label">Unit</div>
+              <div class="bar-track"><div class="bar-fill" id="bar-unit" style="width:0%;background:var(--unit)"></div></div>
+              <div class="bar-pct" id="pct-unit">—</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Integration</div>
+              <div class="bar-track"><div class="bar-fill" id="bar-integ" style="width:0%;background:var(--integ)"></div></div>
+              <div class="bar-pct" id="pct-integ">—</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">E2E</div>
+              <div class="bar-track"><div class="bar-fill" id="bar-e2e" style="width:0%;background:var(--e2e)"></div></div>
+              <div class="bar-pct" id="pct-e2e">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Coverage Summary</div>
+          <div id="coverage-bars">
+            <div class="bar-row">
+              <div class="bar-label">Lines</div>
+              <div class="bar-track"><div class="bar-fill" id="cov-lines" style="width:0%;background:var(--pass)"></div></div>
+              <div class="bar-pct" id="cov-lines-pct">—</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Functions</div>
+              <div class="bar-track"><div class="bar-fill" id="cov-fns" style="width:0%;background:var(--pass)"></div></div>
+              <div class="bar-pct" id="cov-fns-pct">—</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Branches</div>
+              <div class="bar-track"><div class="bar-fill" id="cov-branches" style="width:0%;background:var(--pass)"></div></div>
+              <div class="bar-pct" id="cov-branches-pct">—</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">Statements</div>
+              <div class="bar-track"><div class="bar-fill" id="cov-stmts" style="width:0%;background:var(--pass)"></div></div>
+              <div class="bar-pct" id="cov-stmts-pct">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pyramid page -->
+    <div class="page" id="page-pyramid">
+      <div class="page-title">Test Pyramid</div>
+      <div class="page-subtitle">Healthy ratio: majority unit → some integration → minimal E2E</div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Distribution</div>
+          <div class="pyramid-wrap" id="pyramid-viz"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Composition Analysis</div>
+          <div id="pyramid-analysis" style="padding-top:8px; color:var(--muted); font-size:13px; line-height:1.8;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coverage page -->
+    <div class="page" id="page-coverage">
+      <div class="page-title">Code Coverage</div>
+      <div class="page-subtitle">Thresholds: Lines 80% | Functions 80% | Branches 75% | Statements 80%</div>
+      <div id="coverage-drift-banner" style="display:none;margin-bottom:16px;"></div>
+      <div class="grid-2" id="coverage-detail"></div>
+      <div class="card" style="margin-top:24px;">
+        <div class="card-title">Coverage Trend (last 30 runs)</div>
+        <div class="chart-wrap">
+          <svg id="coverage-trend-chart" viewBox="0 0 800 160" preserveAspectRatio="none"></svg>
+        </div>
+        <div style="display:flex;gap:24px;margin-top:8px;font-size:11px;color:var(--muted);">
+          <span><span style="color:var(--pass);">●</span> Lines</span>
+          <span><span style="color:var(--unit);">●</span> Functions</span>
+          <span><span style="color:var(--integ);">●</span> Branches</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unit tests page -->
+    <div class="page" id="page-unit">
+      <div class="page-title">Unit Tests</div>
+      <div class="page-subtitle">Pure business logic — zero external dependencies</div>
+      <div class="card" id="unit-detail">
+        <div class="empty-state">No unit test data loaded. Run the test suite to generate reports.</div>
+      </div>
+    </div>
+
+    <!-- Integration tests page -->
+    <div class="page" id="page-integration">
+      <div class="page-title">Integration Tests</div>
+      <div class="page-subtitle">Cross-service flows with injected mocks — no real infrastructure</div>
+      <div class="card" id="integ-detail">
+        <div class="empty-state">No integration test data loaded. Run the test suite to generate reports.</div>
+      </div>
+    </div>
+
+    <!-- E2E tests page -->
+    <div class="page" id="page-e2e">
+      <div class="page-title">E2E Tests</div>
+      <div class="page-subtitle">Critical path smoke tests via Playwright</div>
+      <div class="card" id="e2e-detail">
+        <div class="empty-state">No E2E test data loaded. Run the test suite to generate reports.</div>
+      </div>
+    </div>
+
+    <!-- Flakiness page -->
+    <div class="page" id="page-flakiness">
+      <div class="page-title">Flakiness Report</div>
+      <div class="page-subtitle">Tests that do not pass consistently across nightly runs</div>
+      <div class="card" id="flakiness-detail">
+        <div class="empty-state">No flakiness data. The nightly scan runs at 02:00 UTC.</div>
+      </div>
+    </div>
+
+    <!-- Event Contracts page -->
+    <div class="page" id="page-event-contracts">
+      <div class="page-title">Event Contract Coverage</div>
+      <div class="page-subtitle">Which event topics have publish and subscribe tests? Run <code style="font-family:var(--font-mono);background:var(--surface-2);padding:1px 6px;border-radius:3px;">npm run check:event-contracts</code> to refresh.</div>
+      <div id="event-contracts-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;"></div>
+      <div class="card" id="event-contracts-detail">
+        <div class="empty-state">No event contract data. Run <code>npm run check:event-contracts:persist</code> then <code>npm run dashboard:generate</code>.</div>
+      </div>
+    </div>
+
+    <!-- Agent Insights page -->
+    <div class="page" id="page-insights">
+      <div class="page-title">Agent Insights</div>
+      <div class="page-subtitle">Persistent findings from Felix · Percy · Iris · Greta · Saxon</div>
+      <div id="insights-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;"></div>
+      <div class="card" id="insights-timeline">
+        <div class="empty-state">No agent insights yet. Run an agent to generate findings.</div>
+      </div>
+    </div>
+
+    <!-- Trends page -->
+    <div class="page" id="page-trends">
+      <div class="page-title">Trend History</div>
+      <div class="page-subtitle">Pass rate over the last 30 CI runs</div>
+      <div class="card">
+        <div class="card-title">Pass Rate Trend</div>
+        <div class="chart-wrap">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  function showPage(name, navEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    navEl.classList.add('active');
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
+  async function loadData() {
+    let latest = null, history = null, flakiness = null, insights = null, coverageHistory = null;
+    let unitTests = null, integTests = null, e2eTests = null;
+
+    try {
+      const [latestRes, historyRes, flakinessRes, insightsRes, coverageHistoryRes,
+             unitTestsRes, integTestsRes, e2eTestsRes] = await Promise.all([
+        fetch('./latest.json').catch(() => null),
+        fetch('./history.json').catch(() => null),
+        fetch('./flakiness-report.json').catch(() => null),
+        fetch('./insights.json').catch(() => null),
+        fetch('./coverage-history.json').catch(() => null),
+        fetch('./unit-tests.json').catch(() => null),
+        fetch('./integration-tests.json').catch(() => null),
+        fetch('./e2e-tests.json').catch(() => null),
+      ]);
+
+      if (latestRes?.ok) latest = await latestRes.json();
+      if (historyRes?.ok) history = await historyRes.json();
+      if (flakinessRes?.ok) flakiness = await flakinessRes.json();
+      if (insightsRes?.ok) insights = await insightsRes.json();
+      if (coverageHistoryRes?.ok) coverageHistory = await coverageHistoryRes.json();
+      if (unitTestsRes?.ok) unitTests = await unitTestsRes.json();
+      if (integTestsRes?.ok) integTests = await integTestsRes.json();
+      if (e2eTestsRes?.ok) e2eTests = await e2eTestsRes.json();
+    } catch {
+      // Running locally without generated data — use demo data
+    }
+
+    // Demo data for local / GitHub Pages preview
+    if (!latest) {
+      latest = generateDemoData();
+      history = { runs: generateDemoHistory() };
+    }
+
+    return { latest, history, flakiness, insights, coverageHistory, unitTests, integTests, e2eTests };
+  }
+
+  function generateDemoData() {
+    return {
+      generatedAt: new Date().toISOString(),
+      commitSha: 'abc1234',
+      runNumber: 42,
+      repository: 'you/horus',
+      passRate: 97,
+      totalTests: 31,
+      layers: {
+        unit: { total: 22, passed: 22, failed: 0, skipped: 0, duration: 1240 },
+        integration: { total: 5, passed: 5, failed: 0, skipped: 0, duration: 340 },
+        e2e: { total: 4, passed: 3, failed: 0, skipped: 1, duration: 8200 },
+      },
+      coverage: { lines: 88, functions: 91, branches: 79, statements: 87 },
+    };
+  }
+
+  function generateDemoHistory() {
+    const base = [92, 94, 91, 97, 95, 96, 98, 97, 100, 96, 97, 94, 98, 97, 99, 97];
+    return base.map((passRate, i) => ({
+      runNumber: i + 27,
+      passRate,
+      generatedAt: new Date(Date.now() - (base.length - i) * 3 * 3600000).toISOString(),
+    }));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function pct(passed, total) {
+    if (!total) return 0;
+    return Math.round((passed / total) * 100);
+  }
+
+  function render(latest, history) {
+    const { layers, coverage, passRate, totalTests, commitSha, runNumber, generatedAt } = latest;
+
+    // Topbar
+    document.getElementById('build-num').textContent = '#' + (runNumber || '—');
+    document.getElementById('commit-sha').textContent = (commitSha || '—').slice(0, 7);
+    document.getElementById('generated-at').textContent =
+      generatedAt ? new Date(generatedAt).toLocaleString() : '—';
+
+    const pill = document.getElementById('overall-status');
+    if (passRate < 90) {
+      pill.className = 'status-pill fail';
+      pill.innerHTML = '<div class="status-dot pulse"></div><span>FAILING</span>';
+    }
+
+    // Hero metrics
+    document.getElementById('pass-rate').textContent = passRate + '%';
+    document.getElementById('pass-rate-sub').textContent =
+      `${layers.unit.passed + layers.integration.passed + layers.e2e.passed} passed of ${totalTests}`;
+    document.getElementById('total-tests').textContent = totalTests;
+    document.getElementById('unit-count').textContent = layers.unit.total;
+    document.getElementById('unit-sub').textContent =
+      `${layers.unit.passed} passed · ${layers.unit.failed} failed`;
+    document.getElementById('integ-count').textContent = layers.integration.total;
+    document.getElementById('integ-sub').textContent =
+      `${layers.integration.passed} passed · ${layers.integration.failed} failed`;
+    document.getElementById('e2e-count').textContent = layers.e2e.total;
+    document.getElementById('e2e-sub').textContent =
+      `${layers.e2e.passed} passed · ${layers.e2e.failed} failed`;
+
+    // Layer bars
+    const up = pct(layers.unit.passed, layers.unit.total);
+    const ip = pct(layers.integration.passed, layers.integration.total);
+    const ep = pct(layers.e2e.passed, layers.e2e.total);
+
+    setTimeout(() => {
+      document.getElementById('bar-unit').style.width = up + '%';
+      document.getElementById('bar-integ').style.width = ip + '%';
+      document.getElementById('bar-e2e').style.width = ep + '%';
+    }, 200);
+
+    document.getElementById('pct-unit').textContent = up + '%';
+    document.getElementById('pct-integ').textContent = ip + '%';
+    document.getElementById('pct-e2e').textContent = ep + '%';
+
+    // Coverage bars
+    if (coverage) {
+      const covFields = [
+        ['cov-lines', 'cov-lines-pct', coverage.lines],
+        ['cov-fns', 'cov-fns-pct', coverage.functions],
+        ['cov-branches', 'cov-branches-pct', coverage.branches],
+        ['cov-stmts', 'cov-stmts-pct', coverage.statements],
+      ];
+      setTimeout(() => {
+        for (const [barId, pctId, val] of covFields) {
+          document.getElementById(barId).style.width = val + '%';
+          document.getElementById(barId).style.background =
+            val >= 80 ? 'var(--pass)' : val >= 60 ? 'var(--warn)' : 'var(--fail)';
+          document.getElementById(pctId).textContent = val + '%';
+        }
+      }, 300);
+    }
+
+    // Pyramid
+    renderPyramid(layers);
+
+    // Layer detail pages
+    renderLayerDetail('unit-detail', 'Unit', layers.unit);
+    renderLayerDetail('integ-detail', 'Integration', layers.integration);
+    renderLayerDetail('e2e-detail', 'E2E', layers.e2e);
+
+    // Coverage detail
+    renderCoverageDetail(coverage);
+
+    // Trends
+    if (history?.runs?.length) renderTrend(history.runs);
+  }
+
+  function renderPyramid(layers) {
+    const total = layers.unit.total + layers.integration.total + layers.e2e.total;
+    const unitPct = pct(layers.unit.total, total);
+    const integPct = pct(layers.integration.total, total);
+    const e2ePct = pct(layers.e2e.total, total);
+
+    const viz = document.getElementById('pyramid-viz');
+    viz.innerHTML = `
+      <div class="pyramid-layer" style="width:${Math.max(e2ePct * 2, 20)}%;height:44px;background:var(--e2e);opacity:0.9;">
+        E2E · ${layers.e2e.total}
+      </div>
+      <div class="pyramid-layer" style="width:${Math.min(Math.max(integPct * 2.5, 35), 70)}%;height:48px;background:var(--integ);opacity:0.9;">
+        Integration · ${layers.integration.total}
+      </div>
+      <div class="pyramid-layer" style="width:90%;height:56px;background:var(--unit);opacity:0.9;">
+        Unit · ${layers.unit.total}
+      </div>
+    `;
+
+    const isHealthy = unitPct > 60;
+    const analysis = document.getElementById('pyramid-analysis');
+    analysis.innerHTML = `
+      <div style="color:var(--text);margin-bottom:12px;">
+        ${isHealthy
+          ? '✅ <strong style="color:var(--pass)">Healthy pyramid</strong> — unit tests dominate the base.'
+          : '⚠️ <strong style="color:var(--warn)">Skewed pyramid</strong> — consider adding more unit tests.'}
+      </div>
+      <div>Unit tests: <strong style="color:var(--unit)">${unitPct}%</strong> of suite</div>
+      <div>Integration: <strong style="color:var(--integ)">${integPct}%</strong> of suite</div>
+      <div>E2E: <strong style="color:var(--e2e)">${e2ePct}%</strong> of suite</div>
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);">
+        Target ratio: ~70% unit · ~20% integration · ~10% E2E
+      </div>
+    `;
+
+    // Surface warning badge on nav item and landing page
+    if (!isHealthy) {
+      const navItem = document.querySelector('[onclick*="\'pyramid\'"]');
+      if (navItem && !navItem.querySelector('.nav-warn')) {
+        const badge = document.createElement('span');
+        badge.className = 'nav-warn';
+        badge.textContent = '!';
+        navItem.appendChild(badge);
+      }
+      const warning = document.getElementById('pyramid-warning');
+      if (warning) warning.style.display = 'block';
+    }
+  }
+
+  function renderLayerDetail(elId, label, layer) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!layer || layer.total === 0) return; // leave empty-state message
+    const passRate = pct(layer.passed, layer.total);
+    const dur = layer.duration > 1000
+      ? (layer.duration / 1000).toFixed(1) + 's'
+      : layer.duration + 'ms';
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;">${layer.total}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Passed</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;color:var(--pass);">${layer.passed}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Failed</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;color:${layer.failed > 0 ? 'var(--fail)' : 'var(--muted)'};">${layer.failed}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Duration</div>
+          <div style="font-size:28px;font-family:var(--font-mono);font-weight:700;">${dur}</div>
+        </div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:var(--radius);overflow:hidden;height:8px;">
+        <div style="height:100%;width:${passRate}%;background:${passRate === 100 ? 'var(--pass)' : passRate >= 90 ? 'var(--warn)' : 'var(--fail)'};transition:width .4s ease;"></div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted);">${passRate}% pass rate${layer.skipped > 0 ? ` · ${layer.skipped} skipped` : ''}</div>
+    `;
+  }
+
+  function renderCoverageDetail(coverage) {
+    if (!coverage) {
+      document.getElementById('coverage-detail').innerHTML =
+        '<div class="empty-state" style="grid-column:1/-1">No coverage data available.</div>';
+      return;
+    }
+
+    const metrics = [
+      { label: 'Lines', value: coverage.lines, threshold: 80 },
+      { label: 'Functions', value: coverage.functions, threshold: 80 },
+      { label: 'Branches', value: coverage.branches, threshold: 75 },
+      { label: 'Statements', value: coverage.statements, threshold: 80 },
+    ];
+
+    document.getElementById('coverage-detail').innerHTML = metrics.map(m => {
+      const color = m.value >= m.threshold ? 'var(--pass)' : m.value >= m.threshold * 0.8 ? 'var(--warn)' : 'var(--fail)';
+      return `
+        <div class="metric-card ${m.value >= m.threshold ? 'pass' : 'warn'}">
+          <div class="metric-label">${m.label} Coverage</div>
+          <div class="metric-value" style="color:${color}">${m.value}%</div>
+          <div class="metric-sub">Threshold: ${m.threshold}%</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  let _trendChart = null;
+
+  function renderTrend(runs) {
+    if (!runs.length || typeof Chart === 'undefined') return;
+    const canvas = document.getElementById('trend-chart');
+    if (!canvas) return;
+
+    if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
+
+    const labels = runs.map(r =>
+      r.runNumber ? `#${r.runNumber}` : new Date(r.generatedAt).toLocaleDateString()
+    );
+    const vals = runs.map(r => r.passRate);
+
+    _trendChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: vals,
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249,115,22,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: vals.map(v => v >= 95 ? '#22c55e' : v >= 80 ? '#f59e0b' : '#ef4444'),
+          pointBorderColor: '#09090b',
+          pointBorderWidth: 1.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            min: Math.max(0, Math.min(...vals) - 5),
+            max: 101,
+            ticks: { callback: v => v + '%', color: '#71717a', font: { family: 'Space Mono', size: 10 } },
+            grid: { color: '#27272a' },
+            border: { color: '#27272a' },
+          },
+          x: {
+            ticks: { color: '#71717a', font: { family: 'Space Mono', size: 10 }, maxRotation: 45 },
+            grid: { color: '#27272a' },
+            border: { color: '#27272a' },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#18181b',
+            borderColor: '#27272a',
+            borderWidth: 1,
+            titleColor: '#e4e4e7',
+            bodyColor: '#71717a',
+            callbacks: { label: ctx => `Pass rate: ${ctx.raw}%` },
+          },
+        },
+      },
+    });
+  }
+
+  // ── Layer test detail table ───────────────────────────────────────────────
+
+  function renderLayerTests(elId, tests) {
+    const el = document.getElementById(elId);
+    if (!el || !tests?.length) return;
+
+    // Failed tests first, then by duration descending
+    const sorted = [...tests].sort((a, b) => {
+      if (a.status === 'failed' && b.status !== 'failed') return -1;
+      if (b.status === 'failed' && a.status !== 'failed') return 1;
+      return b.duration - a.duration;
+    });
+
+    const filterId = elId + '-filter';
+    const tableId = elId + '-table';
+    const failed = tests.filter(t => t.status === 'failed').length;
+
+    const rows = (list) => list.map(t => {
+      const dur = t.duration >= 1000 ? (t.duration / 1000).toFixed(2) + 's' : Math.round(t.duration) + 'ms';
+      const statusColor = t.status === 'passed' ? 'var(--pass)' : t.status === 'failed' ? 'var(--fail)' : 'var(--muted)';
+      const errorHtml = t.error
+        ? `<div style="margin-top:4px;font-size:11px;color:var(--fail);font-family:var(--font-mono);white-space:pre-wrap;opacity:.85;">${t.error.split('\n')[0]}</div>`
+        : '';
+      return `
+        <tr data-name="${t.name.toLowerCase()}" data-file="${t.file.toLowerCase()}">
+          <td style="padding:8px 12px;width:60px;">
+            <span style="background:${statusColor}22;color:${statusColor};border-radius:3px;padding:2px 6px;font-family:var(--font-mono);font-size:10px;font-weight:700;">${t.status.toUpperCase()}</span>
+          </td>
+          <td style="padding:8px 12px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text);">${t.name}</div>
+            <div style="font-size:11px;color:var(--muted);">${t.file}</div>
+            ${errorHtml}
+          </td>
+          <td style="padding:8px 12px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap;">${dur}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">
+            Test Cases (${tests.length})${failed ? ` · <span style="color:var(--fail);">${failed} failed</span>` : ''}
+          </div>
+        </div>
+        <input id="${filterId}" class="test-filter" placeholder="Filter tests…" oninput="filterTests('${tableId}', this.value)" />
+        <table id="${tableId}" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="padding:6px 12px;text-align:left;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Status</th>
+              <th style="padding:6px 12px;text-align:left;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Test</th>
+              <th style="padding:6px 12px;text-align:right;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Duration</th>
+            </tr>
+          </thead>
+          <tbody>${rows(sorted)}</tbody>
+        </table>
+      </div>`;
+
+    el.insertAdjacentHTML('beforeend', html);
+  }
+
+  function filterTests(tableId, query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll(`#${tableId} tr[data-name]`).forEach(row => {
+      const match = row.dataset.name.includes(q) || row.dataset.file.includes(q);
+      row.style.display = match ? '' : 'none';
+    });
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+
+
+  function renderFlakiness(data) {
+    const el = document.getElementById('flakiness-detail');
+    if (!el) return;
+    if (!data) return;
+
+    const { flakyTests = [], consistentlyFailing = [], summary = {}, analyzedAt, runsAnalyzed } = data;
+
+    if (flakyTests.length === 0 && consistentlyFailing.length === 0) {
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:24px;">
+          <span style="font-size:24px;">✅</span>
+          <div>
+            <div style="font-weight:500;color:var(--pass);">No flaky tests detected</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Analyzed ${runsAnalyzed} runs · ${new Date(analyzedAt).toLocaleString()}</div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const badge = (label, color) =>
+      `<span style="background:${color}22;color:${color};border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500;">${label}</span>`;
+
+    const rows = [
+      ...flakyTests.map(t => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;word-break:break-all;">${t.name}</td>
+          <td style="padding:10px 12px;text-align:center;font-family:var(--font-mono);color:var(--warn);">${t.passCount}/${t.total}</td>
+          <td style="padding:10px 12px;text-align:center;">${badge('FLAKY', '#f59e0b')}</td>
+        </tr>`),
+      ...consistentlyFailing.map(t => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;word-break:break-all;">${t.name}</td>
+          <td style="padding:10px 12px;text-align:center;font-family:var(--font-mono);color:var(--fail);">0/${t.failCount}</td>
+          <td style="padding:10px 12px;text-align:center;">${badge('FAILING', '#ef4444')}</td>
+        </tr>`),
+    ].join('');
+
+    const alwaysFailing = summary.alwaysFailing ?? consistentlyFailing.length;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+        <div class="metric-card warn">
+          <div class="metric-label">Flaky</div>
+          <div class="metric-value" style="color:var(--warn)">${summary.flaky ?? flakyTests.length}</div>
+          <div class="metric-sub">Inconsistent across runs</div>
+        </div>
+        <div class="metric-card ${alwaysFailing > 0 ? 'fail' : ''}">
+          <div class="metric-label">Always Failing</div>
+          <div class="metric-value" style="color:${alwaysFailing > 0 ? 'var(--fail)' : 'var(--muted)'}">${alwaysFailing}</div>
+          <div class="metric-sub">Failed every run</div>
+        </div>
+        <div class="metric-card pass">
+          <div class="metric-label">Healthy</div>
+          <div class="metric-value" style="color:var(--pass)">${summary.healthy ?? 0}</div>
+          <div class="metric-sub">Consistent passes</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Test</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Passes</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);">
+        Analyzed ${runsAnalyzed} nightly runs · Last scan: ${new Date(analyzedAt).toLocaleString()}
+      </div>`;
+  }
+
+  // ── Event Contract Coverage ───────────────────────────────────────────────
+
+  function renderEventContracts(insights) {
+    const summaryEl = document.getElementById('event-contracts-summary');
+    const detailEl = document.getElementById('event-contracts-detail');
+    if (!summaryEl || !detailEl || !insights) return;
+
+    // Find the most recent event-contracts insight
+    const ecInsights = insights
+      .filter((i) => i.agentId === 'event-contracts')
+      .sort((a, b) => b.runAt.localeCompare(a.runAt));
+
+    if (ecInsights.length === 0) return;
+
+    const report = ecInsights[0].details;
+    if (!report || !report.gaps) return;
+
+    const { totalTopics, fullyCovered, publishOnly, subscribeOnly, fullyUncovered, gaps, analyzedAt } = report;
+
+    summaryEl.innerHTML = [
+      { label: 'Fully Covered', value: fullyCovered, color: 'var(--pass)' },
+      { label: 'Publish Only', value: publishOnly, color: 'var(--warn)' },
+      { label: 'Subscribe Only', value: subscribeOnly, color: 'var(--warn)' },
+      { label: 'Uncovered', value: fullyUncovered, color: fullyUncovered > 0 ? 'var(--fail)' : 'var(--muted)' },
+    ].map(({ label, value, color }) => `
+      <div class="metric-card">
+        <div class="metric-label">${label}</div>
+        <div class="metric-value" style="color:${color}">${value}</div>
+        <div class="metric-sub">of ${totalTopics} topics</div>
+      </div>`).join('');
+
+    const icon = (covered) => covered
+      ? `<span style="color:var(--pass);">✓</span>`
+      : `<span style="color:var(--fail);">✗</span>`;
+
+    const rows = gaps.map((gap) => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;">${gap.topic}</td>
+        <td style="padding:10px 12px;text-align:center;">${icon(gap.publishCovered)}</td>
+        <td style="padding:10px 12px;text-align:center;">${icon(gap.subscribeCovered)}</td>
+        <td style="padding:10px 12px;font-size:11px;color:var(--muted);">${gap.declaredIn.join(', ')}</td>
+      </tr>`).join('');
+
+    detailEl.innerHTML = `
+      <div class="card-title" style="margin-bottom:16px;">Topics (${totalTopics}) · Last analyzed ${new Date(analyzedAt).toLocaleString()}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Topic</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Publish Test</th>
+            <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Subscribe Test</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Declared In</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ── Coverage Drift ────────────────────────────────────────────────────────
+
+  function renderCoverageDrift(coverageHistory, latest) {
+    const bannerEl = document.getElementById('coverage-drift-banner');
+    const svgEl = document.getElementById('coverage-trend-chart');
+    if (!coverageHistory || coverageHistory.length === 0) return;
+
+    // Delta banner — compare last two snapshots
+    if (bannerEl && coverageHistory.length >= 2 && latest?.coverageDelta) {
+      const d = latest.coverageDelta;
+      const drops = Object.entries(d).filter(([, v]) => v < 0);
+      if (drops.length > 0) {
+        const msg = drops.map(([k, v]) => `${k}: ${v}%`).join(' · ');
+        bannerEl.style.display = 'block';
+        bannerEl.innerHTML = `
+          <div style="background:var(--fail)22;border:1px solid var(--fail)44;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:10px;">
+            <span style="color:var(--fail);font-size:16px;">▼</span>
+            <div>
+              <span style="color:var(--fail);font-weight:500;">Coverage drift detected</span>
+              <span style="color:var(--muted);margin-left:12px;font-size:12px;">${msg}</span>
+            </div>
+          </div>`;
+      }
+    }
+
+    // Trend SVG — lines, functions, branches over time
+    if (!svgEl || coverageHistory.length < 2) return;
+
+    const W = 800, H = 160, PAD = { t: 10, b: 20, l: 4, r: 4 };
+    const n = coverageHistory.length;
+    const x = (i) => PAD.l + (i / (n - 1)) * (W - PAD.l - PAD.r);
+    const y = (v) => PAD.t + ((100 - v) / 100) * (H - PAD.t - PAD.b);
+
+    const polyline = (vals, color) =>
+      `<polyline points="${vals.map((v, i) => `${x(i)},${y(v)}`).join(' ')}"
+        fill="none" stroke="${color}" stroke-width="2"
+        stroke-linejoin="round" stroke-linecap="round"/>`;
+
+    // Threshold reference lines
+    const thresholdLine = (threshold, color) =>
+      `<line x1="${PAD.l}" y1="${y(threshold)}" x2="${W - PAD.r}" y2="${y(threshold)}"
+        stroke="${color}" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>`;
+
+    svgEl.innerHTML = `
+      ${thresholdLine(80, 'var(--pass)')}
+      ${thresholdLine(75, 'var(--integ)')}
+      ${polyline(coverageHistory.map((s) => s.lines), 'var(--pass)')}
+      ${polyline(coverageHistory.map((s) => s.functions), 'var(--unit)')}
+      ${polyline(coverageHistory.map((s) => s.branches), 'var(--integ)')}
+    `;
+  }
+
+  // ── Agent Insights ────────────────────────────────────────────────────────
+
+  function renderInsights(insights) {
+    const summaryEl = document.getElementById('insights-summary');
+    const timelineEl = document.getElementById('insights-timeline');
+    if (!summaryEl || !timelineEl) return;
+    if (!insights || insights.length === 0) return;
+
+    const SEVERITY_COLOR = { critical: 'var(--fail)', warning: 'var(--warn)', info: 'var(--pass)' };
+    const AGENT_LABEL = { felix: 'Felix', percy: 'Percy', iris: 'Iris', greta: 'Greta', saxon: 'Saxon' };
+    const CATEGORY_LABEL = { failure: 'Failures', diff: 'Diff Review', dashboard: 'Dashboard', flakiness: 'Flakiness', coverage: 'Coverage' };
+
+    // Summary counts by severity
+    const counts = { critical: 0, warning: 0, info: 0 };
+    for (const i of insights) counts[i.severity] = (counts[i.severity] ?? 0) + 1;
+
+    summaryEl.innerHTML = ['critical', 'warning', 'info'].map(sev => `
+      <div class="metric-card ${sev === 'critical' ? 'fail' : sev === 'warning' ? 'warn' : 'pass'}">
+        <div class="metric-label">${sev.charAt(0).toUpperCase() + sev.slice(1)}</div>
+        <div class="metric-value" style="color:${SEVERITY_COLOR[sev]}">${counts[sev]}</div>
+        <div class="metric-sub">agent findings</div>
+      </div>`).join('');
+
+    // Timeline — most recent first
+    const sorted = [...insights].sort((a, b) => b.runAt.localeCompare(a.runAt));
+
+    const badge = (label, color) =>
+      `<span style="background:${color}22;color:${color};border:1px solid ${color}44;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:500;">${label}</span>`;
+
+    const rows = sorted.map(insight => `
+      <div style="display:flex;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+        <div style="width:4px;min-height:40px;border-radius:2px;background:${SEVERITY_COLOR[insight.severity]};flex-shrink:0;margin-top:2px;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+            ${badge(AGENT_LABEL[insight.agentId] ?? insight.agentId, 'var(--accent)')}
+            ${badge(CATEGORY_LABEL[insight.category] ?? insight.category, 'var(--muted)')}
+            ${badge(insight.severity.toUpperCase(), SEVERITY_COLOR[insight.severity])}
+            <span style="font-size:11px;color:var(--muted);margin-left:auto;">${new Date(insight.runAt).toLocaleString()}</span>
+          </div>
+          <div class="md-prose" style="font-size:13px;line-height:1.5;">${typeof marked !== 'undefined' ? marked.parse(insight.summary) : insight.summary}</div>
+        </div>
+      </div>`).join('');
+
+    timelineEl.innerHTML = `
+      <div class="card-title" style="margin-bottom:16px;">Recent Findings (${insights.length})</div>
+      <div>${rows}</div>`;
+  }
+
+  loadData().then(({ latest, history, flakiness, insights, coverageHistory, unitTests, integTests, e2eTests }) => {
+    render(latest, history);
+    renderLayerTests('unit-detail', unitTests);
+    renderLayerTests('integ-detail', integTests);
+    renderLayerTests('e2e-detail', e2eTests);
+    renderFlakiness(flakiness);
+    renderInsights(insights);
+    renderCoverageDrift(coverageHistory, latest);
+    renderEventContracts(insights);
+  });
+</script>
+</body>
+</html>
+

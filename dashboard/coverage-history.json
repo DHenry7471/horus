@@ -1,0 +1,11 @@
+[
+  {
+    "id": "cbc71cd5-aaa2-484a-ac2a-59c3dc8a6e59",
+    "capturedAt": "2026-06-09T16:25:37.605Z",
+    "commitSha": "9343435d4babeb44cd8632d7ca9ec9648ab04e78",
+    "lines": 90.37,
+    "functions": 100,
+    "branches": 100,
+    "statements": 90.78
+  }
+]

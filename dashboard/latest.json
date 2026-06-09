@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-06-09T16:25:37.605Z",
+  "commitSha": "9343435d4babeb44cd8632d7ca9ec9648ab04e78",
+  "runNumber": 82,
+  "repository": "DHenry7471/horus",
+  "passRate": 100,
+  "totalTests": 102,
+  "layers": {
+    "unit": {
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 196.53076171875
+    },
+    "integration": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 9.6015625
+    },
+    "e2e": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 2440.6359999999995
+    }
+  },
+  "coverage": {
+    "lines": 90.37,
+    "functions": 100,
+    "branches": 100,
+    "statements": 90.78
+  }
+}

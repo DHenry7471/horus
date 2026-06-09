@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Order → Notification Integration order creation given new order when created then notification service sends confirmation email",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 5.898390000000006
+  },
+  {
+    "name": "Order → Notification Integration order confirmation given existing order when confirmed then customer receives processing notification",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.771332000000001
+  },
+  {
+    "name": "Order → Notification Integration order cancellation given existing order when cancelled then customer receives cancellation notification with reason",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.76261599999998
+  },
+  {
+    "name": "Order → Notification Integration MockNotificationSender reset given sent notifications and shouldFail set when reset is called then clears state",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.6086379999999849
+  },
+  {
+    "name": "Order → Notification Integration notification sender failure given sender failure when order is created then notification is persisted as FAILED status",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.6016759999999977
+  },
+  {
+    "name": "Order → Notification Integration full order lifecycle given order when progressing through lifecycle then correct notifications are sent at each stage",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.5779799999999966
+  }
+]

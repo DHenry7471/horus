@@ -1,0 +1,32 @@
+[
+  {
+    "name": "health check returns 200 OK",
+    "file": "order-api.spec.ts",
+    "status": "passed",
+    "duration": 30
+  },
+  {
+    "name": "given valid payload when creating order then returns 201 with order id",
+    "file": "order-api.spec.ts",
+    "status": "passed",
+    "duration": 26
+  },
+  {
+    "name": "given created order when confirming then status transitions to CONFIRMED",
+    "file": "order-api.spec.ts",
+    "status": "passed",
+    "duration": 18
+  },
+  {
+    "name": "given invalid payload when creating order then returns 400 with error message",
+    "file": "order-api.spec.ts",
+    "status": "passed",
+    "duration": 18
+  },
+  {
+    "name": "given non-existent order id when fetching then returns 404",
+    "file": "order-api.spec.ts",
+    "status": "passed",
+    "duration": 10
+  }
+]
