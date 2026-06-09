@@ -6,6 +6,8 @@
   <title>Horus — Quality Observatory</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
   <style>
     :root {
       --bg:          #09090b;
@@ -447,6 +449,41 @@
       font-family: var(--font-mono);
       font-size: 12px;
     }
+
+    /* ── Pyramid warning badge on nav ── */
+    .nav-warn {
+      margin-left: auto;
+      background: rgba(245,158,11,0.15);
+      color: var(--warn);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* ── Test table filter ── */
+    .test-filter {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 12px;
+      color: var(--text);
+      font-size: 12px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .test-filter:focus { border-color: var(--accent); }
+    .test-filter::placeholder { color: var(--muted); }
+
+    /* ── Markdown prose in insights ── */
+    .md-prose h1,.md-prose h2,.md-prose h3 { font-size: 13px; font-weight: 700; margin: 10px 0 4px; color: var(--text); }
+    .md-prose p  { margin: 4px 0; color: var(--text); font-size: 13px; line-height: 1.6; }
+    .md-prose ul,.md-prose ol { padding-left: 18px; margin: 4px 0; }
+    .md-prose li { font-size: 12px; color: var(--muted); margin: 2px 0; }
+    .md-prose strong { color: var(--text); }
+    .md-prose code { font-family: var(--font-mono); font-size: 11px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -571,6 +608,13 @@
           <div class="metric-label">E2E Tests</div>
           <div class="metric-value" style="color:var(--e2e)" id="e2e-count">—</div>
           <div class="metric-sub" id="e2e-sub">—</div>
+        </div>
+      </div>
+
+      <div id="pyramid-warning" style="display:none;margin-bottom:16px;">
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;gap:10px;">
+          <span style="color:var(--warn);font-size:15px;">⚠</span>
+          <span style="color:var(--warn);font-size:13px;">Test pyramid skewed — unit tests are under 60% of the suite. <span style="color:var(--muted);">See <strong style="color:var(--warn);cursor:pointer;" onclick="showPage('pyramid',document.querySelector('[onclick*=pyramid]'))">Pyramid</strong> for details.</span></span>
         </div>
       </div>
 
@@ -723,7 +767,7 @@
       <div class="card">
         <div class="card-title">Pass Rate Trend</div>
         <div class="chart-wrap">
-          <svg id="trend-chart" viewBox="0 0 800 160" preserveAspectRatio="none"></svg>
+          <canvas id="trend-chart"></canvas>
         </div>
       </div>
     </div>
@@ -745,14 +789,19 @@
 
   async function loadData() {
     let latest = null, history = null, flakiness = null, insights = null, coverageHistory = null;
+    let unitTests = null, integTests = null, e2eTests = null;
 
     try {
-      const [latestRes, historyRes, flakinessRes, insightsRes, coverageHistoryRes] = await Promise.all([
+      const [latestRes, historyRes, flakinessRes, insightsRes, coverageHistoryRes,
+             unitTestsRes, integTestsRes, e2eTestsRes] = await Promise.all([
         fetch('./latest.json').catch(() => null),
         fetch('./history.json').catch(() => null),
         fetch('./flakiness-report.json').catch(() => null),
         fetch('./insights.json').catch(() => null),
         fetch('./coverage-history.json').catch(() => null),
+        fetch('./unit-tests.json').catch(() => null),
+        fetch('./integration-tests.json').catch(() => null),
+        fetch('./e2e-tests.json').catch(() => null),
       ]);
 
       if (latestRes?.ok) latest = await latestRes.json();
@@ -760,6 +809,9 @@
       if (flakinessRes?.ok) flakiness = await flakinessRes.json();
       if (insightsRes?.ok) insights = await insightsRes.json();
       if (coverageHistoryRes?.ok) coverageHistory = await coverageHistoryRes.json();
+      if (unitTestsRes?.ok) unitTests = await unitTestsRes.json();
+      if (integTestsRes?.ok) integTests = await integTestsRes.json();
+      if (e2eTestsRes?.ok) e2eTests = await e2eTestsRes.json();
     } catch {
       // Running locally without generated data — use demo data
     }
@@ -770,7 +822,7 @@
       history = { runs: generateDemoHistory() };
     }
 
-    return { latest, history, flakiness, insights, coverageHistory };
+    return { latest, history, flakiness, insights, coverageHistory, unitTests, integTests, e2eTests };
   }
 
   function generateDemoData() {
@@ -918,6 +970,19 @@
         Target ratio: ~70% unit · ~20% integration · ~10% E2E
       </div>
     `;
+
+    // Surface warning badge on nav item and landing page
+    if (!isHealthy) {
+      const navItem = document.querySelector('[onclick*="\'pyramid\'"]');
+      if (navItem && !navItem.querySelector('.nav-warn')) {
+        const badge = document.createElement('span');
+        badge.className = 'nav-warn';
+        badge.textContent = '!';
+        navItem.appendChild(badge);
+      }
+      const warning = document.getElementById('pyramid-warning');
+      if (warning) warning.style.display = 'block';
+    }
   }
 
   function renderLayerDetail(elId, label, layer) {
@@ -980,46 +1045,135 @@
     }).join('');
   }
 
+  let _trendChart = null;
+
   function renderTrend(runs) {
-    const svg = document.getElementById('trend-chart');
-    if (!runs.length) return;
+    if (!runs.length || typeof Chart === 'undefined') return;
+    const canvas = document.getElementById('trend-chart');
+    if (!canvas) return;
 
-    const W = 800, H = 160, PAD = 20;
+    if (_trendChart) { _trendChart.destroy(); _trendChart = null; }
+
+    const labels = runs.map(r =>
+      r.runNumber ? `#${r.runNumber}` : new Date(r.generatedAt).toLocaleDateString()
+    );
     const vals = runs.map(r => r.passRate);
-    const min = Math.max(0, Math.min(...vals) - 5);
-    const max = 101;
 
-    const x = (i) => PAD + (i / (vals.length - 1)) * (W - PAD * 2);
-    const y = (v) => PAD + ((max - v) / (max - min)) * (H - PAD * 2);
+    _trendChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: vals,
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249,115,22,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: vals.map(v => v >= 95 ? '#22c55e' : v >= 80 ? '#f59e0b' : '#ef4444'),
+          pointBorderColor: '#09090b',
+          pointBorderWidth: 1.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            min: Math.max(0, Math.min(...vals) - 5),
+            max: 101,
+            ticks: { callback: v => v + '%', color: '#71717a', font: { family: 'Space Mono', size: 10 } },
+            grid: { color: '#27272a' },
+            border: { color: '#27272a' },
+          },
+          x: {
+            ticks: { color: '#71717a', font: { family: 'Space Mono', size: 10 }, maxRotation: 45 },
+            grid: { color: '#27272a' },
+            border: { color: '#27272a' },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#18181b',
+            borderColor: '#27272a',
+            borderWidth: 1,
+            titleColor: '#e4e4e7',
+            bodyColor: '#71717a',
+            callbacks: { label: ctx => `Pass rate: ${ctx.raw}%` },
+          },
+        },
+      },
+    });
+  }
 
-    const points = vals.map((v, i) => `${x(i)},${y(v)}`).join(' ');
-    const areaPoints = `${x(0)},${H - PAD} ` + points + ` ${x(vals.length - 1)},${H - PAD}`;
+  // ── Layer test detail table ───────────────────────────────────────────────
 
-    // Grid lines
-    const gridLines = [100, 90, 80, 70].map(v =>
-      `<line x1="${PAD}" y1="${y(v)}" x2="${W - PAD}" y2="${y(v)}"
-             stroke="#27272a" stroke-width="1" stroke-dasharray="4,4"/>
-       <text x="${PAD - 4}" y="${y(v) + 4}" fill="#52525b" font-size="9"
-             font-family="Space Mono" text-anchor="end">${v}%</text>`
-    ).join('');
+  function renderLayerTests(elId, tests) {
+    const el = document.getElementById(elId);
+    if (!el || !tests?.length) return;
 
-    svg.innerHTML = `
-      ${gridLines}
-      <defs>
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#f97316" stop-opacity="0.25"/>
-          <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <polygon points="${areaPoints}" fill="url(#areaGrad)"/>
-      <polyline points="${points}" fill="none" stroke="#f97316" stroke-width="2"
-                stroke-linejoin="round" stroke-linecap="round"/>
-      ${vals.map((v, i) =>
-        `<circle cx="${x(i)}" cy="${y(v)}" r="3"
-                 fill="${v >= 95 ? '#22c55e' : v >= 80 ? '#f59e0b' : '#ef4444'}"
-                 stroke="#09090b" stroke-width="1.5"/>`
-      ).join('')}
-    `;
+    // Failed tests first, then by duration descending
+    const sorted = [...tests].sort((a, b) => {
+      if (a.status === 'failed' && b.status !== 'failed') return -1;
+      if (b.status === 'failed' && a.status !== 'failed') return 1;
+      return b.duration - a.duration;
+    });
+
+    const filterId = elId + '-filter';
+    const tableId = elId + '-table';
+    const failed = tests.filter(t => t.status === 'failed').length;
+
+    const rows = (list) => list.map(t => {
+      const dur = t.duration >= 1000 ? (t.duration / 1000).toFixed(2) + 's' : Math.round(t.duration) + 'ms';
+      const statusColor = t.status === 'passed' ? 'var(--pass)' : t.status === 'failed' ? 'var(--fail)' : 'var(--muted)';
+      const errorHtml = t.error
+        ? `<div style="margin-top:4px;font-size:11px;color:var(--fail);font-family:var(--font-mono);white-space:pre-wrap;opacity:.85;">${t.error.split('\n')[0]}</div>`
+        : '';
+      return `
+        <tr data-name="${t.name.toLowerCase()}" data-file="${t.file.toLowerCase()}">
+          <td style="padding:8px 12px;width:60px;">
+            <span style="background:${statusColor}22;color:${statusColor};border-radius:3px;padding:2px 6px;font-family:var(--font-mono);font-size:10px;font-weight:700;">${t.status.toUpperCase()}</span>
+          </td>
+          <td style="padding:8px 12px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text);">${t.name}</div>
+            <div style="font-size:11px;color:var(--muted);">${t.file}</div>
+            ${errorHtml}
+          </td>
+          <td style="padding:8px 12px;text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap;">${dur}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">
+            Test Cases (${tests.length})${failed ? ` · <span style="color:var(--fail);">${failed} failed</span>` : ''}
+          </div>
+        </div>
+        <input id="${filterId}" class="test-filter" placeholder="Filter tests…" oninput="filterTests('${tableId}', this.value)" />
+        <table id="${tableId}" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="padding:6px 12px;text-align:left;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Status</th>
+              <th style="padding:6px 12px;text-align:left;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Test</th>
+              <th style="padding:6px 12px;text-align:right;font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Duration</th>
+            </tr>
+          </thead>
+          <tbody>${rows(sorted)}</tbody>
+        </table>
+      </div>`;
+
+    el.insertAdjacentHTML('beforeend', html);
+  }
+
+  function filterTests(tableId, query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll(`#${tableId} tr[data-name]`).forEach(row => {
+      const match = row.dataset.name.includes(q) || row.dataset.file.includes(q);
+      row.style.display = match ? '' : 'none';
+    });
   }
 
   // ── Boot ──────────────────────────────────────────────────────────────────
@@ -1245,7 +1399,7 @@
             ${badge(insight.severity.toUpperCase(), SEVERITY_COLOR[insight.severity])}
             <span style="font-size:11px;color:var(--muted);margin-left:auto;">${new Date(insight.runAt).toLocaleString()}</span>
           </div>
-          <div style="font-size:13px;color:var(--text);line-height:1.5;">${insight.summary}</div>
+          <div class="md-prose" style="font-size:13px;line-height:1.5;">${typeof marked !== 'undefined' ? marked.parse(insight.summary) : insight.summary}</div>
         </div>
       </div>`).join('');
 
@@ -1254,8 +1408,11 @@
       <div>${rows}</div>`;
   }
 
-  loadData().then(({ latest, history, flakiness, insights, coverageHistory }) => {
+  loadData().then(({ latest, history, flakiness, insights, coverageHistory, unitTests, integTests, e2eTests }) => {
     render(latest, history);
+    renderLayerTests('unit-detail', unitTests);
+    renderLayerTests('integ-detail', integTests);
+    renderLayerTests('e2e-detail', e2eTests);
     renderFlakiness(flakiness);
     renderInsights(insights);
     renderCoverageDrift(coverageHistory, latest);

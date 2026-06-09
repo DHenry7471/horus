@@ -67,6 +67,21 @@ export async function generate(config: HorusDashboardConfig): Promise<void> {
     layerResults[layer.name] = parseLayer(raw, layer.format);
   }
 
+  // Write per-layer test detail files (before stripping from snapshot)
+  for (const [name, result] of Object.entries(layerResults)) {
+    if (result.tests?.length) {
+      fs.writeFileSync(
+        path.join(outputDir, `${name}-tests.json`),
+        JSON.stringify(result.tests, null, 2),
+      );
+    }
+  }
+
+  // Strip tests from snapshot layers — latest.json stays lean
+  const snapshotLayers: Record<string, LayerResult> = Object.fromEntries(
+    Object.entries(layerResults).map(([k, { tests: _t, ...rest }]) => [k, rest]),
+  );
+
   const totalTests = Object.values(layerResults).reduce((s, l) => s + l.total, 0);
   const totalPassed = Object.values(layerResults).reduce((s, l) => s + l.passed, 0);
   const passRate = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
@@ -83,7 +98,7 @@ export async function generate(config: HorusDashboardConfig): Promise<void> {
     repository: process.env['GITHUB_REPOSITORY'] ?? 'local',
     passRate,
     totalTests,
-    layers: layerResults,
+    layers: snapshotLayers,
     coverage,
   };
 

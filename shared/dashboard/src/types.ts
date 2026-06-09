@@ -40,6 +40,15 @@ export interface HorusDashboardConfig {
   maxHistoryRuns?: number;
 }
 
+/** One individual test case within a layer. */
+export interface TestCase {
+  name: string;
+  file: string;
+  status: 'passed' | 'failed' | 'skipped';
+  duration: number;
+  error?: string;
+}
+
 /** Normalised counts for a single test layer. */
 export interface LayerResult {
   total: number;
@@ -47,6 +56,8 @@ export interface LayerResult {
   failed: number;
   skipped: number;
   duration: number;
+  /** Individual test cases — populated by parsers, stripped before writing latest.json. */
+  tests?: TestCase[];
 }
 
 /** Coverage percentages parsed from a coverage-summary.json. */

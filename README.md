@@ -197,8 +197,9 @@ pnpm run ingest
 # Check event contract coverage (exits 1 if gaps found — CI-gateable)
 pnpm run check:event-contracts
 
-# Generate quality dashboard
-pnpm run dashboard:generate
+# Generate quality dashboard (with coverage)
+pnpm run dashboard:full     # runs test:coverage then dashboard:generate
+pnpm run dashboard:generate # skips coverage — use when reports already exist
 pnpm run dashboard:serve
 ```
 
@@ -246,13 +247,13 @@ The live dashboard is published to GitHub Pages on every merge to `main`.
 **[View Dashboard →](https://dhenry7471.github.io/horus/dashboard/)**
 
 Tracks:
-- Overall pass rate trend (last 30 runs)
-- Per-layer pass rates (unit / integration / E2E)
-- Code coverage vs thresholds + **drift delta** between runs
-- Test pyramid distribution health
-- Flakiness report computed from run history (not a static file)
+- **Pass rate trend** — Chart.js line chart with hover tooltips, run-number x-axis labels, and colour-coded points
+- **Per-layer detail pages** — filterable table of every test case (failed first, inline error messages) alongside aggregate counts
+- **Code coverage** vs thresholds + drift delta banner between runs
+- **Test pyramid health** — `!` badge on the nav item and a landing-page callout when unit tests fall below 60% of the suite
+- **Flakiness report** — computed from `TestRunStore` run history, not a static file
 - **Event contract coverage** — publish and subscribe test gaps per topic
-- **Agent insights timeline** — persistent findings from all five AI agents
+- **Agent insights timeline** — Markdown-rendered findings from all agents, sorted by severity
 
 ---
 
@@ -320,8 +321,9 @@ Writes:
 | File | Contents |
 |---|---|
 | `index.html` | Self-contained dashboard (rendered from bundled template or custom) |
-| `latest.json` | Current `DashboardSnapshot` |
+| `latest.json` | Current `DashboardSnapshot` (aggregates only) |
 | `history.json` | Up to `maxHistoryRuns` snapshots |
+| `{layer}-tests.json` | Per-test detail for each layer — name, file, status, duration, error |
 | `coverage-history.json` | Coverage snapshots from `CoverageStore` |
 | `flakiness-report.json` | Flakiness analysis from `TestRunStore` |
 | `insights.json` | Latest 200 agent insight records |
