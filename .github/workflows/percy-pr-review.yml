@@ -65,9 +65,11 @@ jobs:
       - name: Post Percy review as PR comment
         if: always()
         uses: actions/github-script@v7
+        env:
+          PERCY_OUTPUT: ${{ steps.percy.outputs.output }}
         with:
           script: |
-            const raw = `${{ steps.percy.outputs.output }}`.trim();
+            const raw = (process.env.PERCY_OUTPUT ?? '').trim();
             if (!raw) {
               core.warning('Percy agent produced no output — skipping comment');
               return;
