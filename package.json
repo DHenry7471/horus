@@ -6,10 +6,10 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
-    "build": "pnpm run build --filter './shared/*'",
+    "build": "pnpm --filter './shared/*' run build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts --no-eslintrc --config .eslintrc.cjs",
-    "test:all": "pnpm run test:all --filter @wutangbanger/horus-example"
+    "test:all": "pnpm --filter @wutangbanger/horus-example run test:all"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
