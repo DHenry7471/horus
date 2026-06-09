@@ -17,7 +17,8 @@
     "paths": {
       "@wutangbanger/horus-contracts": ["./shared/contracts/src/index.ts"],
       "@wutangbanger/horus-test-utils": ["./shared/test-utils/src/index.ts"],
-      "@wutangbanger/horus-insight-store": ["./shared/insight-store/src/index.ts"]
+      "@wutangbanger/horus-insight-store": ["./shared/insight-store/src/index.ts"],
+      "@wutangbanger/horus-dashboard": ["./shared/dashboard/src/index.ts"]
     }
   },
   "include": ["shared/**/*"],

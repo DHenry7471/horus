@@ -42,7 +42,7 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 **`@wutangbanger/horus-test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure. Private — not published to npm.
 
-**Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
+**`@wutangbanger/horus-dashboard`** — the dashboard generator. Reads test results, coverage snapshots, flakiness data, and agent insights from a `reportsDir` and writes a self-contained HTML observatory plus supporting JSON files. Usable as a CLI (`horus-dashboard`) or programmatically via `generate()`. Published to npm.
 
 **AI Agent pipeline** — twelve Claude agents (Felix, Percy, Iris, Greta, Saxon, Clint, Ambrosine, Ernie, Furio, Kurt, Pat, Tessa) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
 
@@ -58,6 +58,9 @@ Works with Vitest, Jest, Mocha, Pytest — any runner that emits JSON output.
 
 ```bash
 pnpm add @wutangbanger/horus-contracts @wutangbanger/horus-insight-store
+
+# Optional: generate the HTML dashboard
+pnpm add @wutangbanger/horus-dashboard
 ```
 
 ```yaml
@@ -97,7 +100,8 @@ horus/
 ├── shared/                         ← Publishable packages
 │   ├── contracts/                  ← Interfaces only (@wutangbanger/horus-contracts)
 │   ├── test-utils/                 ← Mock implementations (private, domain-coupled)
-│   └── insight-store/              ← Observability persistence (@wutangbanger/horus-insight-store)
+│   ├── insight-store/              ← Observability persistence (@wutangbanger/horus-insight-store)
+│   └── dashboard/                  ← Dashboard generator CLI + API (@wutangbanger/horus-dashboard)
 ├── example/                        ← Reference implementation (private)
 │   ├── services/
 │   │   ├── order-service/          ← Express REST API
@@ -295,6 +299,34 @@ CLI bin (installed with the package):
 horus-ingest --file reports/unit-results.json --layer unit
 horus-ingest --file reports/integration-results.json --layer integration
 ```
+
+---
+
+## @wutangbanger/horus-dashboard
+
+The dashboard generator. Reads from the JSONL stores written by `horus-insight-store` and produces a static HTML site.
+
+```bash
+# CLI — generate the dashboard from CI
+horus-dashboard --reportsDir ./reports --outputDir ./quality-dashboard/dist
+
+# Programmatic
+import { generate } from '@wutangbanger/horus-dashboard';
+await generate({ reportsDir: '/abs/path/reports', outputDir: '/abs/path/site' });
+```
+
+Writes:
+
+| File | Contents |
+|---|---|
+| `index.html` | Self-contained dashboard (rendered from bundled template or custom) |
+| `latest.json` | Current `DashboardSnapshot` |
+| `history.json` | Up to `maxHistoryRuns` snapshots |
+| `coverage-history.json` | Coverage snapshots from `CoverageStore` |
+| `flakiness-report.json` | Flakiness analysis from `TestRunStore` |
+| `insights.json` | Latest 200 agent insight records |
+
+When `CLAUDE_AGENTS_MCP_URL` or `IRIS_ENABLED=true` is set, the Iris agent runs automatically and injects an AI-generated commentary snippet into the dashboard HTML.
 
 ---
 

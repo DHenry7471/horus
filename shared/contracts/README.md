@@ -47,4 +47,4 @@ Production services **never** import `@wutangbanger/horus-test-utils`.
 
 ## Version
 
-`1.3.0` — publishable to npm (`publishConfig.access: public`).
+`1.4.0` — publishable to npm (`publishConfig.access: public`).
