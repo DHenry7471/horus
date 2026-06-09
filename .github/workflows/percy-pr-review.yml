@@ -50,6 +50,7 @@ jobs:
 
       - name: Run horus-percy agent
         id: percy
+        continue-on-error: true
         working-directory: example
         run: |
           # Output is structured JSON (PercyOutput) — no text parsing required
@@ -62,10 +63,17 @@ jobs:
           HORUS_REPORTS_DIR: ./reports
 
       - name: Post Percy review as PR comment
+        if: always()
         uses: actions/github-script@v7
+        env:
+          PERCY_OUTPUT: ${{ steps.percy.outputs.output }}
         with:
           script: |
-            const raw = `${{ steps.percy.outputs.output }}`;
+            const raw = (process.env.PERCY_OUTPUT ?? '').trim();
+            if (!raw) {
+              core.warning('Percy agent produced no output — skipping comment');
+              return;
+            }
             const result = JSON.parse(raw);
 
             const verdictEmoji = {
