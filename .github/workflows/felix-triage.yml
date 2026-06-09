@@ -101,9 +101,11 @@ jobs:
 
       - name: Post Felix triage as PR comment
         uses: actions/github-script@v7
+        env:
+          FELIX_OUTPUT: ${{ steps.felix.outputs.output }}
         with:
           script: |
-            const raw = `${{ steps.felix.outputs.output }}`;
+            const raw = process.env.FELIX_OUTPUT;
             const result = JSON.parse(raw);
             const isBlock = result.mergeRecommendation === 'BLOCK';
             const verdict = isBlock ? '🚫 **BLOCK**' : '✅ **ALLOW**';
