@@ -227,10 +227,11 @@ CI fails on PR
 
 [PR #2](https://github.com/DHenry7471/horus/pull/2) adds the `shipOrder` feature and shows both agents firing on the same PR:
 
-- **Percy** reviewed the test diff and posted ✅ **APPROVE** — noting the AAA pattern, GIVEN-WHEN-THEN naming, and clean mock injection across 7 new tests.
-- **Felix** triaged the CI failures and posted 🚫 **BLOCK** — identifying 3 HIGH-confidence regressions (wrong event count, notification status mismatch, lifecycle expectation off by one) and automatically applying the `merge-block` label.
+- **Percy** reviewed the test diff and posted ✅ **APPROVE** — confirming AAA pattern, GIVEN-WHEN-THEN naming, proper mock injection, test isolation, and a net gain of +7 tests. Verdict: *"Code is clean, maintainable, and ready to merge."*
+- **Felix** triaged the CI failures and posted 🚫 **BLOCK** — identifying 3 HIGH-confidence regressions: (1) `shipOrder` publishes fewer events than the unit test expects, (2) the shipment notification lands with the wrong status (`SENT` vs `PENDING`), (3) the full lifecycle test receives an unexpected extra notification. Felix automatically applied the `merge-block` label.
+- **Clint** audited the workflow changes to `clint-ci-review.yml` and `percy-pr-review.yml` and posted ✅ **APPROVE with recommendations** — surfacing two P0 security fixes already in the diff (shell injection via unquoted `${{ expr }}` in `run:` steps, and script injection via template expressions interpolated directly into `github-script` JavaScript) plus four follow-up hardening items: scope `GITHUB_TOKEN` permissions to `pull-requests: write`, add `timeout-minutes` to agent steps, surface `steps.*.outcome` in posted comments so silent agent failures are visible, and write large diff payloads to a temp file to avoid env-var size limits.
 
-This is the intended workflow: Percy catches quality issues in the test *approach*, Felix catches failures in the test *results* — both writing structured findings that persist to the Agent Insights dashboard.
+This is the intended workflow: Percy catches quality issues in the test *approach*, Felix catches failures in the test *results*, and Clint audits the pipeline gates themselves — all three writing structured findings that persist to the Agent Insights dashboard.
 
 ---
 
