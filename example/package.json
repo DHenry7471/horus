@@ -7,10 +7,11 @@
     "test:integration": "vitest run tests/integration --reporter=json --outputFile=reports/integration-results.json",
     "test:e2e": "playwright test tests/e2e",
     "test:contract": "vitest run tests/contract/consumer.order-notification.test.ts && vitest run tests/contract/provider.order-service.test.ts",
-    "ingest": "horus-ingest --file reports/unit-results.json --layer unit && horus-ingest --file reports/integration-results.json --layer integration",
+    "ingest": "node node_modules/@wutangbanger/horus-insight-store/dist/ingest.js --file reports/unit-results.json --layer unit && node node_modules/@wutangbanger/horus-insight-store/dist/ingest.js --file reports/integration-results.json --layer integration",
     "test:all": "pnpm run test:unit && pnpm run test:integration && pnpm run ingest && pnpm run test:contract && pnpm run test:e2e",
     "test:coverage": "mkdir -p reports && vitest run tests/unit tests/integration --coverage --reporter=json --outputFile=reports/unit-results.json",
-    "dashboard:generate": "tsx quality-dashboard/src/generate.js",
+    "dashboard:generate": "node node_modules/@wutangbanger/horus-dashboard/dist/cli.js --reportsDir reports --outputDir quality-dashboard/dist",
+    "dashboard:full": "pnpm run test:coverage && pnpm run dashboard:generate",
     "dashboard:serve": "pnpm dlx serve quality-dashboard/dist",
     "agents:felix": "tsx agents/run-agent.ts felix \"$(cat reports/unit-results.json reports/integration-results.json 2>/dev/null | jq -sc '.')\"",
     "flakiness:analyze": "tsx agents/generate-flakiness-report.ts",
@@ -36,6 +37,7 @@
   "dependencies": {
     "-": "^0.0.1",
     "@wutangbanger/horus-contracts": "workspace:*",
+    "@wutangbanger/horus-dashboard": "workspace:*",
     "@wutangbanger/horus-insight-store": "workspace:*"
   },
   "devDependencies": {

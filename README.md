@@ -11,6 +11,29 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><strong>Quality Dashboard</strong></td>
+    <td><strong>Unit Tests</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/dashboard-overview.png" alt="Quality Dashboard — overall pass rate, test counts by layer, coverage summary" /></td>
+    <td><img src="docs/screenshots/unit-tests.png" alt="Unit Tests — 90 total, 89 passed, 1 failed, 99% pass rate" /></td>
+  </tr>
+  <tr>
+    <td><strong>Agent Insights</strong></td>
+    <td><strong>Trend History</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/agent-insights.png" alt="Agent Insights — persistent findings from Felix, Iris, Saxon" /></td>
+    <td><img src="docs/screenshots/trend-history.png" alt="Trend History — pass rate over last 30 CI runs" /></td>
+  </tr>
+</table>
+
+---
+
 ## What Horus Provides
 
 **`@wutangbanger/horus-insight-store`** — the observability persistence layer. Stores agent findings, per-test run history, and coverage snapshots as JSONL. Everything the dashboard reads comes from here. Includes the `horus-ingest` CLI for ingesting any test runner's JSON output.
@@ -19,7 +42,7 @@ The `order-service` and `notification-service` in `example/` are **reference sub
 
 **`@wutangbanger/horus-test-utils`** — injectable mock implementations of those interfaces, so the reference subjects can be exercised at the integration layer without real infrastructure. Private — not published to npm.
 
-**Quality Dashboard** — a static HTML observatory that renders pass rate trends, flakiness reports computed from run history, coverage drift between runs, event contract coverage, and an AI agent insights timeline.
+**`@wutangbanger/horus-dashboard`** — the dashboard generator. Reads test results, coverage snapshots, flakiness data, and agent insights from a `reportsDir` and writes a self-contained HTML observatory plus supporting JSON files. Usable as a CLI (`horus-dashboard`) or programmatically via `generate()`. Published to npm.
 
 **AI Agent pipeline** — twelve Claude agents (Felix, Percy, Iris, Greta, Saxon, Clint, Ambrosine, Ernie, Furio, Kurt, Pat, Tessa) whose findings are persisted as structured `AgentInsight` records rather than ephemeral stdout.
 
@@ -35,6 +58,9 @@ Works with Vitest, Jest, Mocha, Pytest — any runner that emits JSON output.
 
 ```bash
 pnpm add @wutangbanger/horus-contracts @wutangbanger/horus-insight-store
+
+# Optional: generate the HTML dashboard
+pnpm add @wutangbanger/horus-dashboard
 ```
 
 ```yaml
@@ -74,7 +100,8 @@ horus/
 ├── shared/                         ← Publishable packages
 │   ├── contracts/                  ← Interfaces only (@wutangbanger/horus-contracts)
 │   ├── test-utils/                 ← Mock implementations (private, domain-coupled)
-│   └── insight-store/              ← Observability persistence (@wutangbanger/horus-insight-store)
+│   ├── insight-store/              ← Observability persistence (@wutangbanger/horus-insight-store)
+│   └── dashboard/                  ← Dashboard generator CLI + API (@wutangbanger/horus-dashboard)
 ├── example/                        ← Reference implementation (private)
 │   ├── services/
 │   │   ├── order-service/          ← Express REST API
@@ -170,8 +197,9 @@ pnpm run ingest
 # Check event contract coverage (exits 1 if gaps found — CI-gateable)
 pnpm run check:event-contracts
 
-# Generate quality dashboard
-pnpm run dashboard:generate
+# Generate quality dashboard (with coverage)
+pnpm run dashboard:full     # runs test:coverage then dashboard:generate
+pnpm run dashboard:generate # skips coverage — use when reports already exist
 pnpm run dashboard:serve
 ```
 
@@ -200,6 +228,16 @@ CI fails on PR
 
 **Nightly:** The flakiness scan runs the full suite 3× and opens a GitHub issue for any non-deterministic tests.
 
+### Agents in action — [PR #2](https://github.com/DHenry7471/horus/pull/2)
+
+[PR #2](https://github.com/DHenry7471/horus/pull/2) adds the `shipOrder` feature and shows both agents firing on the same PR:
+
+- **Percy** reviewed the test diff and posted ✅ **APPROVE** — confirming AAA pattern, GIVEN-WHEN-THEN naming, proper mock injection, test isolation, and a net gain of +7 tests. Verdict: *"Code is clean, maintainable, and ready to merge."*
+- **Felix** triaged the CI failures and posted 🚫 **BLOCK** — identifying 3 HIGH-confidence regressions: (1) `shipOrder` publishes fewer events than the unit test expects, (2) the shipment notification lands with the wrong status (`SENT` vs `PENDING`), (3) the full lifecycle test receives an unexpected extra notification. Felix automatically applied the `merge-block` label.
+- **Clint** audited the workflow changes to `clint-ci-review.yml` and `percy-pr-review.yml` and posted ✅ **APPROVE with recommendations** — surfacing two P0 security fixes already in the diff (shell injection via unquoted `${{ expr }}` in `run:` steps, and script injection via template expressions interpolated directly into `github-script` JavaScript) plus four follow-up hardening items: scope `GITHUB_TOKEN` permissions to `pull-requests: write`, add `timeout-minutes` to agent steps, surface `steps.*.outcome` in posted comments so silent agent failures are visible, and write large diff payloads to a temp file to avoid env-var size limits.
+
+This is the intended workflow: Percy catches quality issues in the test *approach*, Felix catches failures in the test *results*, and Clint audits the pipeline gates themselves — all three writing structured findings that persist to the Agent Insights dashboard.
+
 ---
 
 ## Quality Dashboard
@@ -209,13 +247,13 @@ The live dashboard is published to GitHub Pages on every merge to `main`.
 **[View Dashboard →](https://dhenry7471.github.io/horus/dashboard/)**
 
 Tracks:
-- Overall pass rate trend (last 30 runs)
-- Per-layer pass rates (unit / integration / E2E)
-- Code coverage vs thresholds + **drift delta** between runs
-- Test pyramid distribution health
-- Flakiness report computed from run history (not a static file)
+- **Pass rate trend** — Chart.js line chart with hover tooltips, run-number x-axis labels, and colour-coded points
+- **Per-layer detail pages** — filterable table of every test case (failed first, inline error messages) alongside aggregate counts
+- **Code coverage** vs thresholds + drift delta banner between runs
+- **Test pyramid health** — `!` badge on the nav item and a landing-page callout when unit tests fall below 60% of the suite
+- **Flakiness report** — computed from `TestRunStore` run history, not a static file
 - **Event contract coverage** — publish and subscribe test gaps per topic
-- **Agent insights timeline** — persistent findings from all five AI agents
+- **Agent insights timeline** — Markdown-rendered findings from all agents, sorted by severity
 
 ---
 
@@ -262,6 +300,35 @@ CLI bin (installed with the package):
 horus-ingest --file reports/unit-results.json --layer unit
 horus-ingest --file reports/integration-results.json --layer integration
 ```
+
+---
+
+## @wutangbanger/horus-dashboard
+
+The dashboard generator. Reads from the JSONL stores written by `horus-insight-store` and produces a static HTML site.
+
+```bash
+# CLI — generate the dashboard from CI
+horus-dashboard --reportsDir ./reports --outputDir ./quality-dashboard/dist
+
+# Programmatic
+import { generate } from '@wutangbanger/horus-dashboard';
+await generate({ reportsDir: '/abs/path/reports', outputDir: '/abs/path/site' });
+```
+
+Writes:
+
+| File | Contents |
+|---|---|
+| `index.html` | Self-contained dashboard (rendered from bundled template or custom) |
+| `latest.json` | Current `DashboardSnapshot` (aggregates only) |
+| `history.json` | Up to `maxHistoryRuns` snapshots |
+| `{layer}-tests.json` | Per-test detail for each layer — name, file, status, duration, error |
+| `coverage-history.json` | Coverage snapshots from `CoverageStore` |
+| `flakiness-report.json` | Flakiness analysis from `TestRunStore` |
+| `insights.json` | Latest 200 agent insight records |
+
+When `CLAUDE_AGENTS_MCP_URL` or `IRIS_ENABLED=true` is set, the Iris agent runs automatically and injects an AI-generated commentary snippet into the dashboard HTML.
 
 ---
 

@@ -29,6 +29,9 @@ importers:
       '@wutangbanger/horus-contracts':
         specifier: workspace:*
         version: link:../shared/contracts
+      '@wutangbanger/horus-dashboard':
+        specifier: workspace:*
+        version: link:../shared/dashboard
       '@wutangbanger/horus-insight-store':
         specifier: workspace:*
         version: link:../shared/insight-store
@@ -56,6 +59,15 @@ importers:
         version: 4.1.7(@types/node@20.19.41)(@vitest/coverage-v8@4.1.7)(vite@8.0.14(@types/node@20.19.41)(esbuild@0.28.0)(tsx@4.22.4))
 
   shared/contracts: {}
+
+  shared/dashboard:
+    dependencies:
+      '@wutangbanger/horus-contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@wutangbanger/horus-insight-store':
+        specifier: workspace:*
+        version: link:../insight-store
 
   shared/insight-store:
     dependencies:

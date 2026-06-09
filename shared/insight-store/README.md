@@ -65,4 +65,4 @@ Vitest is a peer dependency (optional) — only needed when using `HorusVitestRe
 
 ## Version
 
-`1.4.0` — publishable to npm (`publishConfig.access: public`).
+`1.5.0` — publishable to npm (`publishConfig.access: public`).
