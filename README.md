@@ -209,11 +209,10 @@ pnpm run dashboard:serve
 
 ```
 Push / PR
-  ├── [Parallel] Lint + TypeCheck       → blocks merge if fails
+  ├── [Parallel] Lint + TypeCheck + Event Contract Check → blocks merge if fails / uncovered topics found
   ├── [Parallel] Unit Tests             → blocks merge if fails
   │        └── Integration Tests       → blocks merge if fails
   │                 └── E2E Tests      → blocks deploy if fails
-  ├── [Parallel] Event Contract Check  → blocks merge if uncovered topics found
   └── (main only) Dashboard            → publishes to GitHub Pages (Iris-enriched)
 
 PR touches example/tests/**
@@ -418,6 +417,7 @@ Agent findings are persisted as `AgentInsight` records — severity (`info` / `w
 - [Test Strategy](./docs/TEST_STRATEGY.md) — testing philosophy, layer definitions, quality gates
 - [ADR-001: Mock injection over real infrastructure](./docs/decisions/ADR-001-mock-injection.md)
 - [ADR-002: Vitest over Jest](./docs/decisions/ADR-002-vitest.md)
+- [ADR-003: Test pyramid layer counts and thresholds](./docs/decisions/ADR-003-test-pyramid.md)
 - [ADR-004: Publishable packages + pnpm migration](./docs/decisions/ADR-004-publishable-packages.md)
 
 ---

@@ -40,6 +40,10 @@ jobs:
       - name: ESLint
         run: pnpm run lint
 
+      - name: Event contract coverage
+        run: pnpm run check:event-contracts
+        working-directory: example
+
   # ── Stage 2: Unit tests (run in parallel with lint) ────────────────────
   unit-tests:
     name: Unit Tests

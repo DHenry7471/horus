@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+Root `package.json` only defines `build`, `typecheck`, `lint`, and `test:all` (which delegates to `example/` via `--filter`). Every other script below — including `check:event-contracts`, `dashboard:*`, and all `agents:*` commands — is defined only in `example/package.json` and must be run with `cd example &&` first, or from root via `--filter @wutangbanger/horus-example`.
+
 ```bash
 # Install dependencies (pnpm workspaces — run from root)
 pnpm install
@@ -14,14 +16,20 @@ pnpm run typecheck
 # Lint
 pnpm run lint
 
-# Run tests by layer (run from example/ or via filter from root)
-pnpm run test:unit          # Vitest unit tests → example/reports/unit-results.json
-pnpm run test:integration   # Vitest integration tests → example/reports/integration-results.json
+# Everything below runs from example/ (cd example && ...), or from root with
+# `pnpm run <script> --filter @wutangbanger/horus-example`
+
+# Run tests by layer
+pnpm run test:unit          # Vitest unit tests → reports/unit-results.json
+pnpm run test:integration   # Vitest integration tests → reports/integration-results.json
 pnpm run test:e2e           # Playwright E2E (auto-starts server on :3000)
-pnpm run test:all           # All three layers in sequence
+pnpm run test:all           # All three layers in sequence (also runnable from root)
 
 # Unit + integration with V8 coverage (80/80/75 thresholds)
-pnpm run test:coverage      # → example/reports/coverage/
+pnpm run test:coverage      # → reports/coverage/
+
+# Event contract coverage (gated in CI — exits 1 on fully-uncovered topics)
+pnpm run check:event-contracts
 
 # Quality dashboard
 pnpm run dashboard:generate
@@ -36,16 +44,6 @@ pnpm run agents:greta       # Analyze flakiness report
 pnpm run agents:saxon       # Analyze coverage summary
 ```
 
-Test/example scripts run from the `example/` workspace. You can run them from root with:
-```bash
-pnpm run test:unit --filter @wutangbanger/horus-example
-```
-
-Or directly from `example/`:
-```bash
-cd example && pnpm run test:unit
-```
-
 To run a single Vitest test file:
 ```bash
 cd example && pnpm exec vitest run tests/unit/OrderService.test.ts
@@ -53,11 +51,12 @@ cd example && pnpm exec vitest run tests/unit/OrderService.test.ts
 
 ## Architecture
 
-Horus is a **pnpm workspaces monorepo** with two publishable packages (`shared/`) and a private reference implementation (`example/`):
+Horus is a **pnpm workspaces monorepo** with three publishable packages (`shared/`) and a private reference implementation (`example/`):
 
 ```
 shared/contracts      (@wutangbanger/horus-contracts)    — pure TypeScript interfaces; publishable to npm
 shared/insight-store  (@wutangbanger/horus-insight-store) — JSONL stores + ingestion CLI; publishable to npm
+shared/dashboard      (@wutangbanger/horus-dashboard)    — quality dashboard generator + CLI; publishable to npm
 shared/test-utils     (@wutangbanger/horus-test-utils)   — mock implementations; private, domain-coupled
 example/
   services/order-service        — Express REST API + OrderService business logic
