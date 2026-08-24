@@ -1,6 +1,6 @@
 {
   "name": "@wutangbanger/horus-insight-store",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "JSONL-backed persistence for AI agent insights",
   "license": "MIT",
   "type": "module",
@@ -12,19 +12,23 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@wutangbanger/horus-contracts": "workspace:*",
-    "@wutangbanger/claude-agents": "^3.2.0"
+    "@wutangbanger/claude-agents": "^3.2.1",
+    "@wutangbanger/horus-contracts": "workspace:*"
   },
   "peerDependencies": {
     "vitest": ">=1.0.0 <5.0.0"
   },
   "peerDependenciesMeta": {
-    "vitest": { "optional": true }
+    "vitest": {
+      "optional": true
+    }
   },
   "bin": {
     "horus-ingest": "./dist/ingest.js"
