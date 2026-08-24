@@ -1,0 +1,548 @@
+[
+  {
+    "name": "Order → Notification Integration order creation given new order when created then notification service sends confirmation email",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 9.979726999999997
+  },
+  {
+    "name": "Order → Notification Integration order confirmation given existing order when confirmed then customer receives processing notification",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 1.1157599999999945
+  },
+  {
+    "name": "Order → Notification Integration order cancellation given existing order when cancelled then customer receives cancellation notification with reason",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.9883820000000014
+  },
+  {
+    "name": "Order → Notification Integration MockNotificationSender reset given sent notifications and shouldFail set when reset is called then clears state",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.7364800000000002
+  },
+  {
+    "name": "Order → Notification Integration notification sender failure given sender failure when order is created then notification is persisted as FAILED status",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.6859049999999911
+  },
+  {
+    "name": "Order → Notification Integration full order lifecycle given order when progressing through lifecycle then correct notifications are sent at each stage",
+    "file": "order-notification-flow.test.ts",
+    "status": "passed",
+    "duration": 0.7783680000000004
+  },
+  {
+    "name": "AgentInsightStore append given a new insight when appended then it can be read back",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 7.363495
+  },
+  {
+    "name": "AgentInsightStore append given multiple appends when reading then all records are returned in runAt order",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 16.268359000000032
+  },
+  {
+    "name": "AgentInsightStore append given insights from two agents when appended then each lands in its own file",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.7989599999999655
+  },
+  {
+    "name": "AgentInsightStore readAll given empty store when reading all then returns empty array",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.483979999999974
+  },
+  {
+    "name": "AgentInsightStore readAll given multiple agents with multiple insights when reading all then all records are returned",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.1585109999999759
+  },
+  {
+    "name": "AgentInsightStore readSince given insights at different times when reading since a cutoff then only newer records are returned",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.27573000000001
+  },
+  {
+    "name": "AgentInsightStore readSince given empty store when reading since a cutoff then returns empty array",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 0.6249620000000391
+  },
+  {
+    "name": "AgentInsightStore readByAgent given insights from multiple agents when reading by agent then only that agents records are returned",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.3403109999999856
+  },
+  {
+    "name": "AgentInsightStore readByAgent given no insights for an agent when reading by that agent then returns empty array",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 0.7877250000000231
+  },
+  {
+    "name": "AgentInsightStore horus agent insights given a horus-felix insight when appended then typed details are preserved verbatim",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.3211949999999888
+  },
+  {
+    "name": "AgentInsightStore horus agent insights given a horus-percy insight when appended then typed verdict and violations are preserved",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.094662000000028
+  },
+  {
+    "name": "AgentInsightStore horus agent insights given horus and standard agent insights when querying by category then each category is isolated",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.7810670000000073
+  },
+  {
+    "name": "AgentInsightStore horus agent insights given mixed standard and horus insights when reading all then all are returned together",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 1.7700570000000084
+  },
+  {
+    "name": "AgentInsightStore horus agent insights given a horus insight with ALLOW verdict when severity is info",
+    "file": "AgentInsightStore.test.ts",
+    "status": "passed",
+    "duration": 0.9598480000000222
+  },
+  {
+    "name": "CoverageStore append given a new snapshot when appended then it can be read back",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 5.3878349999999955
+  },
+  {
+    "name": "CoverageStore append given multiple snapshots when reading then all are returned sorted by capturedAt ascending",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 8.440022999999968
+  },
+  {
+    "name": "CoverageStore readAll given empty store when reading then returns empty array",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 2.0869500000000016
+  },
+  {
+    "name": "CoverageStore latestDelta given fewer than two snapshots when computing delta then returns null",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.7246769999999856
+  },
+  {
+    "name": "CoverageStore latestDelta given empty store when computing delta then returns null",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.4453940000000216
+  },
+  {
+    "name": "CoverageStore latestDelta given two snapshots when computing delta then returns diff between last two",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.9736839999999916
+  },
+  {
+    "name": "CoverageStore latestDelta given three snapshots when computing delta then uses only the two most recent",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.6608580000000188
+  },
+  {
+    "name": "computeDelta given coverage that improved when computing delta then returns positive deltas and belowThreshold false",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.4254669999999692
+  },
+  {
+    "name": "computeDelta given coverage below threshold when computing delta then belowThreshold is true",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.29357900000002246
+  },
+  {
+    "name": "computeDelta given coverage exactly at threshold when computing delta then belowThreshold is false",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.27460400000001073
+  },
+  {
+    "name": "computeDelta given fractional coverage values when computing delta then rounds to one decimal place",
+    "file": "CoverageStore.test.ts",
+    "status": "passed",
+    "duration": 0.19834100000002763
+  },
+  {
+    "name": "analyzeEventContracts given source files with no event topics when analyzed then report has zero topics",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 8.987438000000054
+  },
+  {
+    "name": "analyzeEventContracts given a declared topic with no test coverage when analyzed then it is fully uncovered",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 2.989120000000014
+  },
+  {
+    "name": "analyzeEventContracts given a topic covered on publish side when analyzed then publishCovered is true",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 2.603506999999979
+  },
+  {
+    "name": "analyzeEventContracts given a topic covered on subscribe side when analyzed then subscribeCovered is true",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 2.09912300000002
+  },
+  {
+    "name": "analyzeEventContracts given a topic covered on both sides when analyzed then fullyCovered count increments",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 2.253182000000038
+  },
+  {
+    "name": "analyzeEventContracts given mixed coverage when analyzed then fully uncovered gaps sort first",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 2.1401799999999866
+  },
+  {
+    "name": "analyzeEventContracts given any analysis when completed then report includes analyzedAt timestamp",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 1.4626309999999876
+  },
+  {
+    "name": "analyzeEventContracts given topics inside node_modules when analyzed then they are excluded",
+    "file": "EventContractAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 1.370837999999992
+  },
+  {
+    "name": "computeFlakeScores given no records when computing scores then returns empty array",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 4.183447000000001
+  },
+  {
+    "name": "computeFlakeScores given a test that always passes when computing scores then it is excluded by default",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 4.177967000000024
+  },
+  {
+    "name": "computeFlakeScores given a healthy test when includeHealthy is true then it is included with flakeRate 0",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.7114329999999995
+  },
+  {
+    "name": "computeFlakeScores given a test that sometimes fails when computing scores then isFlaky is true",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.8321190000000058
+  },
+  {
+    "name": "computeFlakeScores given a test that always fails when computing scores then isAlwaysFailing is true",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.5544989999999927
+  },
+  {
+    "name": "computeFlakeScores given 1 failure in 3 runs when computing scores then flakeRate rounds to 3 decimal places",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.25613899999999035
+  },
+  {
+    "name": "computeFlakeScores given records with varying durations when computing scores then avgDurationMs is rounded mean",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.26986599999997907
+  },
+  {
+    "name": "computeFlakeScores given always-failing and flaky tests when computing scores then always-failing sorts first",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.37508200000002034
+  },
+  {
+    "name": "computeFlakeScores given two flaky tests when computing scores then higher flake rate sorts first",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.3130069999999989
+  },
+  {
+    "name": "computeFlakeScores given records from different layers when computing scores then each score uses layer of its records",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.24406699999997272
+  },
+  {
+    "name": "computeFlakeScores given records for multiple tests when computing scores then each test gets its own score",
+    "file": "FlakinessAnalyzer.test.ts",
+    "status": "passed",
+    "duration": 0.9929900000000202
+  },
+  {
+    "name": "InProcessEventBus publish given a subscriber when event is published then handler is called with correct payload",
+    "file": "InProcessEventBus.test.ts",
+    "status": "passed",
+    "duration": 4.408069000000012
+  },
+  {
+    "name": "InProcessEventBus publish given a provided correlationId when event is published then payload carries it through",
+    "file": "InProcessEventBus.test.ts",
+    "status": "passed",
+    "duration": 0.28875099999999065
+  },
+  {
+    "name": "InProcessEventBus publish given multiple subscribers on same topic when event is published then all handlers are called",
+    "file": "InProcessEventBus.test.ts",
+    "status": "passed",
+    "duration": 0.2531940000000077
+  },
+  {
+    "name": "InProcessEventBus publish given no subscribers when event is published then no error is thrown",
+    "file": "InProcessEventBus.test.ts",
+    "status": "passed",
+    "duration": 1.0974960000000067
+  },
+  {
+    "name": "InProcessEventBus publish given subscribers on different topics when event is published then only matching handler is called",
+    "file": "InProcessEventBus.test.ts",
+    "status": "passed",
+    "duration": 0.6268550000000062
+  },
+  {
+    "name": "InProcessEventBus unsubscribeAll given active subscribers when unsubscribeAll is called then no handlers are invoked on subsequent publish",
+    "file": "InProcessEventBus.test.ts",
+    "status": "passed",
+    "duration": 0.2327669999999955
+  },
+  {
+    "name": "OrderService createOrder given valid request when creating order then persists order with PENDING status",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 7.418674999999951
+  },
+  {
+    "name": "OrderService createOrder given valid request when creating order then calculates total amount correctly",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.5452310000000011
+  },
+  {
+    "name": "OrderService createOrder given valid request when creating order then publishes order.created event",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.4482150000000047
+  },
+  {
+    "name": "OrderService createOrder given empty customerId when creating order then throws validation error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 2.485317000000009
+  },
+  {
+    "name": "OrderService createOrder given no items when creating order then throws validation error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.3578200000000038
+  },
+  {
+    "name": "OrderService createOrder given unknown productId when creating order then throws validation error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.4517010000000141
+  },
+  {
+    "name": "OrderService createOrder given zero quantity when creating order then throws validation error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.47291000000001304
+  },
+  {
+    "name": "OrderService confirmOrder given PENDING order when confirming then transitions to CONFIRMED",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.778064000000029
+  },
+  {
+    "name": "OrderService confirmOrder given PENDING order when confirming then publishes order.confirmed event",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.37251699999995935
+  },
+  {
+    "name": "OrderService confirmOrder given CONFIRMED order when confirming again then throws state transition error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.46369199999998045
+  },
+  {
+    "name": "OrderService confirmOrder given non-existent orderId when confirming then throws not found error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.5287809999999808
+  },
+  {
+    "name": "OrderService cancelOrder given PENDING order when cancelling then transitions to CANCELLED",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.5083239999999591
+  },
+  {
+    "name": "OrderService cancelOrder given SHIPPED order when cancelling then throws because cancellation is not allowed",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.453234000000009
+  },
+  {
+    "name": "OrderService getOrder given an existing order when getOrder is called then returns the order",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.31039399999997386
+  },
+  {
+    "name": "OrderService getOrder given a nonexistent id when getOrder is called then throws not found error",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.49256500000001324
+  },
+  {
+    "name": "OrderService getOrdersByCustomer given multiple orders when filtering by customer then returns only that customers orders",
+    "file": "OrderService.test.ts",
+    "status": "passed",
+    "duration": 0.9007469999999671
+  },
+  {
+    "name": "SqliteOrderRepository findById given a saved order when findById is called then returns the order",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 24.086334999999963
+  },
+  {
+    "name": "SqliteOrderRepository findById given no matching order when findById is called then returns null",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.5661310000000412
+  },
+  {
+    "name": "SqliteOrderRepository findAll given an empty repository when findAll is called then returns empty array",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.6168759999999907
+  },
+  {
+    "name": "SqliteOrderRepository findAll given multiple saved orders when findAll is called then returns all orders",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 1.798530000000028
+  },
+  {
+    "name": "SqliteOrderRepository findWhere given orders with different statuses when filtered by status then returns only matching orders",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.8694990000000189
+  },
+  {
+    "name": "SqliteOrderRepository save given a new order when saved then returns the same order",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.5718909999999937
+  },
+  {
+    "name": "SqliteOrderRepository update given an existing order when updated then returns the merged order",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.8924220000000105
+  },
+  {
+    "name": "SqliteOrderRepository update given a nonexistent id when updated then returns null",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.49784199999999146
+  },
+  {
+    "name": "SqliteOrderRepository delete given an existing order when deleted then returns true and order is gone",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.7227629999999863
+  },
+  {
+    "name": "SqliteOrderRepository delete given a nonexistent id when deleted then returns false",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 0.43804099999999835
+  },
+  {
+    "name": "SqliteOrderRepository close given an open connection when close is called then does not throw",
+    "file": "SqliteOrderRepository.test.ts",
+    "status": "passed",
+    "duration": 1.4562880000000291
+  },
+  {
+    "name": "TestRunStore append given a new record when appended then it can be read back",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 8.127136000000007
+  },
+  {
+    "name": "TestRunStore append given records from different layers when appended then each goes to its own file",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 1.7651779999999917
+  },
+  {
+    "name": "TestRunStore readAll given empty store when reading all then returns empty array",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 1.483979999999974
+  },
+  {
+    "name": "TestRunStore readAll given records across layers when reading all then all records are returned sorted by runAt",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 13.063424000000055
+  },
+  {
+    "name": "TestRunStore readSince given records at different times when reading since cutoff then only newer records are returned",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 1.0357409999999732
+  },
+  {
+    "name": "TestRunStore readSince given empty store when reading since cutoff then returns empty array",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 0.5154660000000035
+  },
+  {
+    "name": "TestRunStore readByTest given multiple test names when reading by name then only matching records are returned",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 1.0280259999999544
+  },
+  {
+    "name": "TestRunStore readByTest given no records for a test name when reading by name then returns empty array",
+    "file": "TestRunStore.test.ts",
+    "status": "passed",
+    "duration": 0.6908540000000016
+  }
+]
